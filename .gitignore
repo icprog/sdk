@@ -1,2 +1,4 @@
 .output/
 bin/*
+.cproject
+.project
