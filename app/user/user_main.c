@@ -14,6 +14,7 @@
 #include "user_interface.h"
 #include "lumlink/lumPlatform.h"
 #include "lumlink/lumUdpSocket.h"
+#include "driver/uart.h"
 
 
 /******************************************************************************
@@ -24,9 +25,11 @@
 *******************************************************************************/
 void user_init(void)
 {
+	uart_init(BIT_RATE_115200, BIT_RATE_115200);
     os_printf("SDK version:%s\n", system_get_sdk_version());
 
 	lum_platformInit();
     lum_udpSocketInit();
+	lum_messageTaskInit();
 }
 

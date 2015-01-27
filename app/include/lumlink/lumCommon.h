@@ -54,6 +54,7 @@
 
 //other data define define
 #define SOCKEY_MAX_DATA_LEN				256
+#define SOCKET_OPEN_DATA_LEN			sizeof(SOCKET_HEADER_OPEN)
 #define SOCKET_SECRET_DATA_OFFSET		sizeof(SOCKET_HEADER_OPEN)
 #define SOCKET_DATA_OFFSET				sizeof(SCOKET_HERADER_INFO)
 #define SOCKET_HEADER_LEN				sizeof(SCOKET_HERADER_INFO)
@@ -80,13 +81,13 @@
 
 #endif
 
-
 typedef enum
 {
-	AES_KEY_DEFAULT,
-	AES_KEY_SERVER,
-	AES_KEY_OPEN
-} AES_KEY_TYPE;
+	MSG_LOCAL_EVENT	= 0,
+	MSG_FROM_UDP	= 1,
+	MSG_FROM_TCP	= 2
+} MSG_ORIGIN;
+
 
 
 typedef struct
@@ -124,16 +125,11 @@ typedef struct
 } SCOKET_HERADER_INFO;
 
 
-typedef struct
-{
-	U8 bEncrypt;
-	U8 bReback;
-	U16 snIndex;
-	U16 bodyLen;
-	AES_KEY_TYPE keyType;
-	U8* bodyData;
-} CREATE_SOCKET_DATA;
 
-
+BOOL lum_checkRevcSocket(U8* recvData, U8 RecvLen);
+void lum_showHexData(U8* data, U8 dataLen);
+void lum_getDeviceMac(U8* macAddr);
+U8* lum_malloc(U32 mllocSize);
+void lum_free(void* pData);
 
 #endif

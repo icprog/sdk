@@ -18,7 +18,7 @@
 
 
 
-static BOOL USER_FUNC lum_getAesKeyData(AES_KEY_TYPE keyType, U8* keyData)
+BOOL USER_FUNC lum_getAesKeyData(AES_KEY_TYPE keyType, U8* keyData)
 {
 	U8* tmpKeyData = NULL;
 	BOOL needCopy = TRUE;
@@ -66,6 +66,38 @@ static BOOL USER_FUNC lum_setAesKey(AES_CTX* aesCtx, AES_KEY_TYPE keyType, AES_D
 	return ret;
 }
 
+
+
+AES_KEY_TYPE USER_FUNC lum_getSocketAesKeyType(MSG_ORIGIN msgOrigin, U8 bEncrypt)
+{
+	AES_KEY_TYPE keyType = AES_KEY_OPEN ;
+
+	if(bEncrypt == 0)
+	{
+		keyType = AES_KEY_OPEN;
+	}
+	else if(msgOrigin == MSG_FROM_UDP)
+	{
+		keyType = AES_KEY_DEFAULT;
+	}
+	else if(msgOrigin == MSG_FROM_TCP)
+	{
+#if 0
+		if(g_deviceConfig.globalData.keyData.serverAesKeyValid)
+		{
+			keyType = AES_KEY_SERVER;
+		}
+		else
+		{
+			keyType = AES_KEY_DEFAULT;
+		}
+#else
+		keyType = AES_KEY_SERVER;
+#endif
+	}
+	return keyType;
+
+}
 
 
 static void USER_FUNC lum_PKCS5PaddingFillData(U8* inputData, U8* dataLen, AES_KEY_TYPE keyType)
@@ -127,10 +159,9 @@ static BOOL USER_FUNC lum_AesEncryptSocketData(U8 *inData, U8* outData, U8* aesD
 }
 
 
-static USER_FUNC lum_AesDecryptSocketData(U8 *inData, U8* outData, U8* aesDataLen, AES_KEY_TYPE keyType)
+static BOOL USER_FUNC lum_AesDecryptSocketData(U8 *inData, U8* outData, U8* aesDataLen, AES_KEY_TYPE keyType)
 {
 	AES_CTX aesCtx;
-	U8 dataLen = *aesDataLen;
 
 
 	if(inData == NULL || outData == NULL)
@@ -141,7 +172,7 @@ static USER_FUNC lum_AesDecryptSocketData(U8 *inData, U8* outData, U8* aesDataLe
 
 	if(keyType == AES_KEY_OPEN)
 	{
-		os_memcpy(outData, inData, dataLen);
+		os_memcpy(outData, inData, *aesDataLen);
 	}
 	else
 	{
@@ -149,20 +180,23 @@ static USER_FUNC lum_AesDecryptSocketData(U8 *inData, U8* outData, U8* aesDataLe
 		{
 			return FALSE;
 		}
-		AES_cbc_decrypt(&aesCtx, inData, outData, dataLen);
+		AES_cbc_decrypt(&aesCtx, inData, outData, *aesDataLen);
 		lum_PKCS5PaddingRemoveData(outData, aesDataLen, keyType);
 	}
 	return TRUE;
 }
 
 
-BOOL USER_FUNC lum_getRecvSocketData(U8* recvData, U8* decryptData, AES_KEY_TYPE keyType)
+BOOL USER_FUNC lum_getRecvSocketData(U8* recvData, U8* decryptData, MSG_ORIGIN socketFrom)
 {
-	U8 openDataLen = sizeof(SOCKET_HEADER_OPEN);
+	U8 openDataLen = SOCKET_OPEN_DATA_LEN;
 	SOCKET_HEADER_OPEN* pHeaderOpen;
+	AES_KEY_TYPE keyType;
 	BOOL ret;
 
+
 	pHeaderOpen = (SOCKET_HEADER_OPEN*)recvData;
+	keyType = lum_getSocketAesKeyType(socketFrom, pHeaderOpen->flag.bEncrypt);
 	os_memcpy(decryptData, recvData, openDataLen);
 	ret = lum_AesDecryptSocketData(recvData+openDataLen, decryptData+openDataLen, &pHeaderOpen->dataLen, keyType);
 	return ret;
@@ -176,7 +210,7 @@ U8* USER_FUNC lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* sock
 	U8* pAesData = NULL;
 	U8 aesDataLen;
 	U16 mallocLen;
-	U8 openDataLen = sizeof(SOCKET_HEADER_OPEN);
+	U8 openDataLen = SOCKET_OPEN_DATA_LEN;
 
 
 	os_memset(tmpData, 0, sizeof(tmpData));
@@ -186,7 +220,7 @@ U8* USER_FUNC lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* sock
 	pSocketHeader->openData.flag.bEncrypt = pCreateData->bEncrypt;
 	pSocketHeader->openData.flag.bReback = pCreateData->bReback;
 	pSocketHeader->openData.flag.bLocked = 0;
-	wifi_get_macaddr(SOFTAP_IF, pSocketHeader->openData.mac);
+	lum_getDeviceMac(pSocketHeader->openData.mac);
 	aesDataLen = (pCreateData->bodyLen + SOCKET_HEADER_LEN - openDataLen);
 	//pSocketHeader->openData.dataLen = (pCreateData->bodyLen + SOCKET_HEADER_LEN - openDataLen); //aesDataLen
 
@@ -199,8 +233,10 @@ U8* USER_FUNC lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* sock
 	//fill body data
 	os_memcpy(tmpData+SOCKET_HEADER_LEN, pCreateData->bodyData, pCreateData->bodyLen);
 
+	lum_showHexData(tmpData, (pCreateData->bodyLen+SOCKET_HEADER_LEN));
+	
 	mallocLen = SOCKET_HEADER_LEN + pCreateData->bodyLen + AES_BLOCKSIZE + 1;
-	pAesData = (U8*)os_malloc(mallocLen);
+	pAesData = (U8*)lum_malloc(mallocLen);
 	if(pAesData == NULL)
 	{
 		lumError("malloc pAesData space faild!");
@@ -209,7 +245,9 @@ U8* USER_FUNC lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* sock
 
 	os_memset(pAesData, 0, mallocLen);
 	os_memcpy(pAesData, tmpData, openDataLen);
+	lumDebug("11 aesDataLen =%d\n", aesDataLen);
 	lum_AesEncryptSocketData(tmpData+openDataLen, pAesData+openDataLen, &aesDataLen, pCreateData->keyType);
+	lumDebug("22 aesDataLen =%d\n", aesDataLen);
 	pSocketHeader = (SCOKET_HERADER_INFO*)pAesData;
 	pSocketHeader->openData.dataLen = aesDataLen;
 	*socketLen = aesDataLen + openDataLen;

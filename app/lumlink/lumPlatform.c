@@ -46,10 +46,12 @@ void USER_FUNC lum_platformInit(void)
 	struct station_config staConfig;
 	char* staSSID = "TP-LINK_47D6";
 	char* staPSWD = "13736098070";
-	S8 macaddr[6];
+	//char* staSSID = "KKKK";
+	//char* staPSWD = "12340000";
+	U8 macaddr[6];
 
 
-	lumDebug("SW_Version=%s HW_Version= %s\n",SW_VERSION, HW_VERSION);
+	lumDebug("\nSW_Version=%s HW_Version= %s\n",SW_VERSION, HW_VERSION);
 	// user_esp_platform_load_param(&esp_param);
 	memset(&staConfig, 0, sizeof(struct station_config));
 	strcpy(staConfig.ssid, staSSID);
@@ -58,7 +60,7 @@ void USER_FUNC lum_platformInit(void)
 	wifi_set_opmode(STATION_MODE);
 	os_printf("staSSID=%s ssidLen=%d staPSWD=%s pswdLen=%d\n", staConfig.ssid, strlen(staConfig.ssid), staConfig.password, strlen(staConfig.password));
 
-	wifi_get_macaddr(STATION_IF, macaddr);
+	lum_getDeviceMac(macaddr);
 	lumDebug("mac="MACSTR"\n", MAC2STR(macaddr));
 
 
