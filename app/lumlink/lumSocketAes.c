@@ -225,7 +225,7 @@ U8* USER_FUNC lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* sock
 	//pSocketHeader->openData.dataLen = (pCreateData->bodyLen + SOCKET_HEADER_LEN - openDataLen); //aesDataLen
 
 	pSocketHeader->reserved = SOCKET_HEADER_RESERVED;
-	pSocketHeader->snIndex = htons(pCreateData->snIndex);
+	pSocketHeader->snIndex = pCreateData->snIndex;
 	pSocketHeader->deviceType = SOCKET_HEADER_DEVICE_TYPE;
 	pSocketHeader->factoryCode = SOCKET_HEADER_FACTORY_CODE;
 	pSocketHeader->licenseData = SOCKET_HEADER_LICENSE_DATA;

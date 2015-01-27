@@ -48,7 +48,7 @@ static MSG_BODY* USER_FUNC lum_createTaskMessage(U8* socketData, U32 ipAddr, MSG
 	messageBody->msgOrigin = socketFrom;
 	messageBody->pData = socketData;
 	messageBody->snIndex = socketHeader->snIndex;
-	messageBody->socketIp = socketFrom;
+	messageBody->socketIp = ipAddr;
 	return messageBody;
 	
 }

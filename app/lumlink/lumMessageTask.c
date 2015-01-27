@@ -105,21 +105,27 @@ static void USER_FUNC lum_messageTask(os_event_t *e)
 {
 	MSG_BODY* messageBody;
 
+
 	lumDebug("==> e->sig= 0x%X\n", e->sig);
+	messageBody = (MSG_BODY*)e->par;
+	
 	switch(e->sig)
 	{
 	case MSG_CMD_FOUND_DEVICE:
-		messageBody = (MSG_BODY*)e->par;
 		lum_replyFoundDevice(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
-		lum_free(messageBody->pData);
 		break;
 
 	default:
 		break;
 	}
-	if((void*)e->par != NULL)
+	
+	if(messageBody != NULL)
 	{
-		lum_free((void*)e->par);
+		if(messageBody->pData != NULL)
+		{
+			lum_free(messageBody->pData);
+		}
+		lum_free(messageBody);
 	}
 }
 
