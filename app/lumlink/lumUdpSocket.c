@@ -96,7 +96,7 @@ void USER_FUNC lum_sendUdpData(U8* socketData, U8 dataLen, U32 ipData)
 {
 	os_memcpy(g_UDPespconn.proto.udp->remote_ip, &ipData, SOCKET_IP_LEN);
 	g_UDPespconn.proto.udp->remote_port = UDP_SOCKET_PORT;
-	lum_showHexData(socketData, dataLen);
+	//lum_showHexData(socketData, dataLen);
 	espconn_sent(&g_UDPespconn, socketData, dataLen);
 }
 

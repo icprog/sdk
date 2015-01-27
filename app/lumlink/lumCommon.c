@@ -69,7 +69,7 @@ U8* USER_FUNC lum_malloc(U32 mllocSize)
 	if(pData != NULL)
 	{
 		g_malloc_count++;
-		lumDebug("**** lum_malloc g_malloc_count=%d\n", g_malloc_count);
+		//lumDebug("**** lum_malloc g_malloc_count=%d\n", g_malloc_count);
 	}
 	return pData;
 }
@@ -82,5 +82,4 @@ void USER_FUNC lum_free(void* pData)
 	g_malloc_count--;
 	lumDebug("**** lum_free g_malloc_count=%d\n", g_malloc_count);
 }
-
 

@@ -20,12 +20,24 @@
 static os_event_t g_messageTaskQueue[MESSAGE_TASK_QUEUE_LEN];
 
 
-static BOOL USER_FUNC lum_createSendSocket(CREATE_SOCKET_DATA* pCreateData, MSG_ORIGIN socketFrom, U32 ipAddr)
+static BOOL USER_FUNC lum_createSendSocket(U8* oriSocketData, CREATE_SOCKET_DATA* pCreateData, MSG_ORIGIN socketFrom, U32 ipAddr)
 {
 	U8* sendData;
 	U8 socketLen;
+	SCOKET_HERADER_INFO* pSocketinfo;
 
+	pCreateData->keyType = lum_getSocketAesKeyType(socketFrom, pCreateData->bEncrypt);
 
+	pSocketinfo = (SCOKET_HERADER_INFO*)oriSocketData;
+	if(pCreateData->bReback == 1)
+	{
+		pCreateData->snIndex = pSocketinfo->snIndex;
+	}
+	else
+	{
+		//
+	}
+	
 	sendData = lum_createSendSocketData(pCreateData, &socketLen);
 	if(sendData == NULL)
 	{
@@ -77,7 +89,6 @@ static void USER_FUNC lum_setFoundDeviceBody(CMD_FOUND_DEVIDE_RESP* pFoundDevRes
 static void USER_FUNC lum_replyFoundDevice(U8* socketData, MSG_ORIGIN socketFrom, U32 ipAddr)
 {
 	CMD_FOUND_DEVIDE_RESP	foundDevResp;
-	SCOKET_HERADER_INFO*	pSocketinfo;
 	CREATE_SOCKET_DATA		createData;
 
 
@@ -90,12 +101,8 @@ static void USER_FUNC lum_replyFoundDevice(U8* socketData, MSG_ORIGIN socketFrom
 	createData.bReback = 1;
 	createData.bodyLen = sizeof(CMD_FOUND_DEVIDE_RESP);
 	createData.bodyData = (U8*)(&foundDevResp);
-	createData.keyType = lum_getSocketAesKeyType(socketFrom, createData.bEncrypt);
-
-	pSocketinfo = (SCOKET_HERADER_INFO*)socketData;
-	createData.snIndex = pSocketinfo->snIndex;
-
-	lum_createSendSocket(&createData, socketFrom, ipAddr);
+	
+	lum_createSendSocket(socketData, &createData, socketFrom, ipAddr);
 }
 
 
