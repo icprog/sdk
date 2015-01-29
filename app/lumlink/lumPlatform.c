@@ -8,10 +8,13 @@
 
 
 #include "ets_sys.h"
+#include "os_type.h"
+#include "mem.h"
 #include "osapi.h"
-
 #include "user_interface.h"
+
 #include "lumlink/lumCommon.h"
+#include "lumlink/lumPlatform.h"
 
 
 static os_timer_t g_APConnectTimer;
@@ -66,6 +69,35 @@ void USER_FUNC lum_platformInit(void)
 	os_timer_disarm(&g_APConnectTimer);
 	os_timer_setfn(&g_APConnectTimer, (os_timer_func_t *)lum_checkConnectStatus, 1);
 	os_timer_arm(&g_APConnectTimer, 1000, 0);
+}
+
+
+void USER_FUNC lum_SaveConfigData(DEVICE_CONFIG_DATA* configData)
+{
+	U32 configLen;
+
+	configLen = sizeof(DEVICE_CONFIG_DATA);
+	if(configLen > SPI_FLASH_SEC_SIZE)
+	{
+		lumError("Save Data too long! \n");
+		return;
+	}
+	spi_flash_erase_sector(USER_CONFIG_DATA_FLASH_SECTOR);
+	spi_flash_write(USER_CONFIG_DATA_FLASH_SECTOR*SPI_FLASH_SEC_SIZE, (U32*)configData, configLen);
+}
+
+
+void USER_FUNC lum_LoadConfigData(DEVICE_CONFIG_DATA* configData)
+{
+	U32 configLen;
+
+	configLen = sizeof(DEVICE_CONFIG_DATA);
+	if(configLen > SPI_FLASH_SEC_SIZE)
+	{
+		lumError("Read Data too long! \n");
+		return;
+	}
+	spi_flash_read(USER_CONFIG_DATA_FLASH_SECTOR*SPI_FLASH_SEC_SIZE, (U32*)configData, configLen);
 }
 
 

@@ -86,7 +86,7 @@ static void USER_FUNC lum_setFoundDeviceBody(CMD_FOUND_DEVIDE_RESP* pFoundDevRes
 
 
 
-static void USER_FUNC lum_replyFoundDevice(U8* socketData, MSG_ORIGIN socketFrom, U32 ipAddr)
+static void USER_FUNC lum_replyFoundDevice(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
 {
 	CMD_FOUND_DEVIDE_RESP	foundDevResp;
 	CREATE_SOCKET_DATA		createData;
@@ -102,10 +102,119 @@ static void USER_FUNC lum_replyFoundDevice(U8* socketData, MSG_ORIGIN socketFrom
 	createData.bodyLen = sizeof(CMD_FOUND_DEVIDE_RESP);
 	createData.bodyData = (U8*)(&foundDevResp);
 	
-	lum_createSendSocket(socketData, &createData, socketFrom, ipAddr);
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
 }
 
 
+
+/********************************************************************************
+Request:|62|
+Response:|62|H-Len|H-Ver|S-Len|S-Ver|N-Len|Name|
+
+参数说明：
+H-Len：1-Byte，硬件版本号长度
+H-Ver：X-Byte，硬件版本号
+S-Len：1-Byte，软件版本号长度
+S-Ver：X-Byte，软件版本号
+N-Len：1-Byte，设备别名长度
+Name：X-Byte，设备别名
+
+********************************************************************************/
+static void USER_FUNC lum_replyGetDeviceInfo(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	U8 deviceNameResp[100];
+	U8 dataLen;
+	DEVICE_NAME_DATA* pNameData;
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+
+
+	os_memset(deviceNameResp, 0, sizeof(deviceNameResp));
+	os_memset(&createData, 0, sizeof(CREATE_SOCKET_DATA));
+
+	//Fill CMD
+	deviceNameResp[index] = MSG_CMD_QUARY_MODULE_INFO;
+	index += 1;
+
+	//HW version lenth
+	dataLen = os_strlen(HW_VERSION);
+	deviceNameResp[index] = dataLen;
+	index += 1;
+
+	//HW version data
+	os_memcpy((deviceNameResp+index), HW_VERSION, dataLen);
+	index += dataLen;
+
+	//SW version lenth
+	dataLen = os_strlen(SW_VERSION);
+	deviceNameResp[index] = dataLen;
+	index += 1;
+
+	//SW version data
+	os_memcpy((deviceNameResp+index), SW_VERSION, dataLen);
+	index += dataLen;
+
+	//Device name lenth
+	pNameData = lum_getDeviceName();
+	deviceNameResp[index] = pNameData->nameLen;
+	index += 1;
+
+	//Device name data
+	os_memcpy((deviceNameResp + index), pNameData->nameData, pNameData->nameLen);
+	index += pNameData->nameLen;
+
+	lumDebug("name=%s, nameLen=%d\n", pNameData->nameData, pNameData->nameLen);
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen =index;
+	createData.bodyData = deviceNameResp;
+	
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+
+}
+
+
+
+/********************************************************************************
+Request:		| 63 | N-Len | Name |
+Response:	| 63 | Result |
+
+********************************************************************************/
+static void USER_FUNC lum_rebackSetDeviceName(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	U8 deviceNameResp[10];
+	DEVICE_NAME_DATA nameData;
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+
+
+	os_memset(deviceNameResp, 0, sizeof(deviceNameResp));
+	os_memset(&nameData, 0, sizeof(DEVICE_NAME_DATA));
+	os_memset(&createData, 0, sizeof(CREATE_SOCKET_DATA));
+
+	//Set device name
+	nameData.nameLen = pSocketDataRecv[SOCKET_HEADER_LEN+1];
+	nameData.nameLen = (nameData.nameLen > (DEVICE_NAME_LEN - 2))?(DEVICE_NAME_LEN - 2):nameData.nameLen;
+	os_memcpy(nameData.nameData, (pSocketDataRecv + SOCKET_HEADER_LEN + 2), nameData.nameLen);
+	lum_setDeviceName(&nameData);
+	lumDebug("Set device name = %s\n", nameData.nameData);
+
+	//Set reback socket body
+	deviceNameResp[index] = MSG_CMD_SET_MODULE_NAME;
+	index += 1;
+	deviceNameResp[index] = REBACK_SUCCESS_MESSAGE;
+	index += 1;
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen = index;
+	createData.bodyData = deviceNameResp;
+	
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+}
 
 
 static void USER_FUNC lum_messageTask(os_event_t *e)
@@ -120,6 +229,14 @@ static void USER_FUNC lum_messageTask(os_event_t *e)
 	{
 	case MSG_CMD_FOUND_DEVICE:
 		lum_replyFoundDevice(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	case MSG_CMD_QUARY_MODULE_INFO:
+		lum_replyGetDeviceInfo(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	case MSG_CMD_SET_MODULE_NAME:
+		lum_rebackSetDeviceName(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
 		break;
 
 	default:

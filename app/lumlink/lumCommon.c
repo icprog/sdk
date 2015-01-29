@@ -13,8 +13,12 @@
 
 #include "user_interface.h"
 #include "lumlink/lumCommon.h"
+#include "lumlink/lumPlatform.h"
+
 
 static U16 g_malloc_count = 0;
+static GLOBAL_CONFIG_DATA g_deviceConfig;
+
 
 BOOL USER_FUNC lum_checkRevcSocket(U8* recvData, U8 RecvLen)
 {
@@ -82,4 +86,48 @@ void USER_FUNC lum_free(void* pData)
 	g_malloc_count--;
 	lumDebug("**** lum_free g_malloc_count=%d\n", g_malloc_count);
 }
+
+
+void USER_FUNC lum_setDeviceName(DEVICE_NAME_DATA* nameData)
+{
+	os_memcpy(&g_deviceConfig.deviceConfigData.deviceName, nameData, sizeof(DEVICE_NAME_DATA));
+	lum_SaveConfigData(&g_deviceConfig.deviceConfigData);
+}
+
+
+DEVICE_NAME_DATA* USER_FUNC lum_getDeviceName(void)
+{
+	return &g_deviceConfig.deviceConfigData.deviceName;
+}
+
+
+static void USER_FUNC lum_initDeviceNameData(void)
+{
+	U8 defaultNameLen = os_strlen(DEFAULT_MODUAL_NAME);
+
+
+	//Device name init
+	os_memcpy(g_deviceConfig.deviceConfigData.deviceName.nameData, DEFAULT_MODUAL_NAME, defaultNameLen);
+	g_deviceConfig.deviceConfigData.deviceName.nameLen = defaultNameLen;
+
+}
+
+
+void USER_FUNC lum_globalConfigDataInit(void)
+{
+	os_memset(&g_deviceConfig, 0, sizeof(GLOBAL_CONFIG_DATA));
+	lum_LoadConfigData(&g_deviceConfig.deviceConfigData);
+	if(g_deviceConfig.deviceConfigData.lumitekFlag != LUMITEK_SW_FLAG)
+	{
+		//Device  first power on flag
+		os_memset(&g_deviceConfig, 0, sizeof(GLOBAL_CONFIG_DATA));
+		g_deviceConfig.deviceConfigData.lumitekFlag = LUMITEK_SW_FLAG;
+
+		lum_initDeviceNameData();
+
+	}
+	lum_SaveConfigData(&g_deviceConfig.deviceConfigData);
+}
+
+
 

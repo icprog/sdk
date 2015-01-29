@@ -30,11 +30,10 @@
 //Modual info
 #define HW_VERSION			"HW_V1.01"
 #define SW_VERSION			"1.01"
-#define DEFAULT_MODUAL_NAME		"Lumitek switch"
+#define DEFAULT_MODUAL_NAME		"Lumlink switch"
 
 
 //device save data define
-#define DEVICE_CONFIG_OFFSET_START 0x00
 #define DEVICE_CONFIG_SIZE (sizeof(DEVICE_CONFIG_DATA))
 
 //socket header data
@@ -125,11 +124,65 @@ typedef struct
 } SCOKET_HERADER_INFO;
 
 
+typedef struct
+{
+	U8	nameLen;
+	U8	nameData[DEVICE_NAME_LEN];
+} DEVICE_NAME_DATA;
+
+
+typedef struct
+{
+	U16 port;
+	U32 ipAddr;
+} SOCKET_ADDR;
+
+
+typedef struct
+{
+	BOOL serverAesKeyValid;
+	U8	serverKey[AES_KEY_LEN];
+} AES_KEY_DATA;
+
+
+typedef struct
+{
+	U8	bLocked;	//used for check device be locked
+	U8	swVersion;	//Used for upgrade check
+	DEVICE_NAME_DATA deviceName;
+	U16 lumitekFlag;
+} DEVICE_CONFIG_DATA;
+
+
+typedef struct
+{
+	U8	macAddr[DEVICE_MAC_LEN];
+	U32 ipAddr;
+	AES_KEY_DATA keyData;
+	U16 mallocCount;
+	U16 socketSn;
+	SOCKET_ADDR tcpServerAddr;
+} GLOBAL_RUNING_DATA;
+
+
+typedef struct
+{
+	DEVICE_CONFIG_DATA deviceConfigData;
+	GLOBAL_RUNING_DATA globalData;
+
+} GLOBAL_CONFIG_DATA;
+
+
 
 BOOL lum_checkRevcSocket(U8* recvData, U8 RecvLen);
 void lum_showHexData(U8* data, U8 dataLen);
 void lum_getDeviceMac(U8* macAddr);
 U8* lum_malloc(U32 mllocSize);
 void lum_free(void* pData);
+
+void lum_globalConfigDataInit(void);
+DEVICE_NAME_DATA* lum_getDeviceName(void);
+void lum_setDeviceName(DEVICE_NAME_DATA* nameData);
+
 
 #endif

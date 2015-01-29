@@ -13,6 +13,10 @@
 #define MESSAGE_TASK_QUEUE_LEN		8
 
 
+#define REBACK_SUCCESS_MESSAGE			0
+#define REBACK_FAILD_MESSAGE			0xFF
+
+
 typedef enum
 {
 	//Gpio data
