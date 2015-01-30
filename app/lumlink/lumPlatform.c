@@ -45,10 +45,10 @@ static void USER_FUNC lum_checkConnectStatus(U8 reset_flag)
 void USER_FUNC lum_platformInit(void)
 {
 	struct station_config staConfig;
-	char* staSSID = "TP-LINK_47D6";
-	char* staPSWD = "13736098070";
-	//char* staSSID = "KKKK";
-	//char* staPSWD = "12340000";
+	//char* staSSID = "TP-LINK_47D6";
+	//char* staPSWD = "13736098070";
+	char* staSSID = "KKKK";
+	char* staPSWD = "12340000";
 	U8 macaddr[6];
 
 

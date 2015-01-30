@@ -14,6 +14,7 @@
 #include "lumlink/lumCommon.h"
 #include "lumlink/lumMessageTask.h"
 #include "lumlink/lumSocketAes.h"
+#include "lumlink/lumGpio.h"
 
 
 
@@ -281,11 +282,11 @@ static void USER_FUNC lum_replySetGpioStatus(U8* pSocketDataRecv, MSG_ORIGIN soc
 	pGpioStatus = (GPIO_STATUS*)(pSocketDataRecv + SOCKET_DATA_OFFSET);
 	if(pGpioStatus->duty == 0xFF) //Open
 	{
-		//setSwitchStatus(SWITCH_OPEN);
+		lum_setSwitchStatus(SWITCH_OPEN);
 	}
 	else //Close
 	{
-		//setSwitchStatus(SWITCH_CLOSE);
+		lum_setSwitchStatus(SWITCH_CLOSE);
 	}
 
 	//Set reback socket body
@@ -321,8 +322,7 @@ void USER_FUNC lum_replyGetGpioStatus(U8* pSocketDataRecv, MSG_ORIGIN socketFrom
 
 	//Get gpio status
 	pGpioStatus = (GPIO_STATUS*)(pSocketDataRecv + SOCKET_DATA_OFFSET);
-	//if(getSwitchStatus()) //Open
-	if(1)
+	if(lum_getSwitchStatus() == SWITCH_OPEN) //Open
 	{
 		pGpioStatus->duty = 0xFF;
 	}

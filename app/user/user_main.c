@@ -15,6 +15,7 @@
 #include "driver/uart.h"
 #include "lumlink/lumUdpSocket.h"
 #include "lumlink/lumPlatform.h"
+#include "lumlink/lumGpio.h"
 
 
 /******************************************************************************
@@ -32,5 +33,6 @@ void user_init(void)
 	lum_platformInit();
     lum_udpSocketInit();
 	lum_messageTaskInit();
+	lum_initIOPin();
 }
 
