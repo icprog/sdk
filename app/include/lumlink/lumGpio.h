@@ -6,10 +6,9 @@
 ******************************
 */
 
-#ifndef __LUMLINK_PLATFORM__H__
-#define __LUMLINK_PLATFORM__H__
+#ifndef __LUMLINK_GPIO__H__
+#define __LUMLINK_GPIO__H__
 
 
-void lum_platformInit(void);
 
 #endif

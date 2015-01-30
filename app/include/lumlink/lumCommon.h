@@ -30,7 +30,7 @@
 //Modual info
 #define HW_VERSION			"HW_V1.01"
 #define SW_VERSION			"1.01"
-#define DEFAULT_MODUAL_NAME		"Lumlink switch"
+#define DEFAULT_MODUAL_NAME		"Lumitek switch"
 
 
 //device save data define
@@ -55,7 +55,7 @@
 #define SOCKEY_MAX_DATA_LEN				256
 #define SOCKET_OPEN_DATA_LEN			sizeof(SOCKET_HEADER_OPEN)
 #define SOCKET_SECRET_DATA_OFFSET		sizeof(SOCKET_HEADER_OPEN)
-#define SOCKET_DATA_OFFSET				sizeof(SCOKET_HERADER_INFO)
+#define SOCKET_DATA_OFFSET				(sizeof(SCOKET_HERADER_INFO)+1)
 #define SOCKET_HEADER_LEN				sizeof(SCOKET_HERADER_INFO)
 #define DEVICE_MAC_LEN					6
 #define SOCKET_IP_LEN					4
@@ -64,6 +64,8 @@
 
 
 #define USER_FUNC	ICACHE_FLASH_ATTR
+#define USER_CONFIG_DATA_FLASH_SECTOR	0x3C
+
 
 #define ntohs(_n)  ((U16)((((_n) & 0xff) << 8) | (((_n) >> 8) & 0xff)))
 #define ntohl(_n)  ((U32)( (((_n) & 0xff) << 24) | (((_n) & 0xff00) << 8) | (((_n) >> 8)  & 0xff00) | (((_n) >> 24) & 0xff) ))
@@ -175,8 +177,9 @@ typedef struct
 
 
 BOOL lum_checkRevcSocket(U8* recvData, U8 RecvLen);
-void lum_showHexData(U8* data, U8 dataLen);
+void lum_showHexData(S8* header, U8* data, U8 dataLen);
 void lum_getDeviceMac(U8* macAddr);
+
 U8* lum_malloc(U32 mllocSize);
 void lum_free(void* pData);
 
@@ -184,5 +187,7 @@ void lum_globalConfigDataInit(void);
 DEVICE_NAME_DATA* lum_getDeviceName(void);
 void lum_setDeviceName(DEVICE_NAME_DATA* nameData);
 
+U8 lum_getDeviceLockStatus(void);
+void lum_setDeviceLockStatus(U8 lockStatus);
 
 #endif

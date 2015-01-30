@@ -86,6 +86,14 @@ typedef struct
 } CMD_FOUND_DEVIDE_RESP;
 
 
+typedef struct
+{
+	U8 flag;
+	U8 fre;   //固定为0x00
+	U8 duty;   //输出高电平为0xFF，低电平为0x00
+	U8 res;  //保留字节，固定为0xFF
+} GPIO_STATUS;
+
 
 void lum_messageTaskInit(void);
 void lum_postTaskMessage(U32 cmdMessage, U32 paraPointer);

@@ -14,7 +14,6 @@
 #include "user_interface.h"
 
 #include "lumlink/lumCommon.h"
-#include "lumlink/lumPlatform.h"
 
 
 static os_timer_t g_APConnectTimer;
@@ -46,10 +45,10 @@ static void USER_FUNC lum_checkConnectStatus(U8 reset_flag)
 void USER_FUNC lum_platformInit(void)
 {
 	struct station_config staConfig;
-	//char* staSSID = "TP-LINK_47D6";
-	//char* staPSWD = "13736098070";
-	char* staSSID = "KKKK";
-	char* staPSWD = "12340000";
+	char* staSSID = "TP-LINK_47D6";
+	char* staPSWD = "13736098070";
+	//char* staSSID = "KKKK";
+	//char* staPSWD = "12340000";
 	U8 macaddr[6];
 
 
@@ -60,7 +59,7 @@ void USER_FUNC lum_platformInit(void)
 	strcpy(staConfig.password, staPSWD);
 	wifi_station_set_config(&staConfig);
 	wifi_set_opmode(STATION_MODE);
-	os_printf("staSSID=%s ssidLen=%d staPSWD=%s pswdLen=%d\n", staConfig.ssid, strlen(staConfig.ssid), staConfig.password, strlen(staConfig.password));
+	//os_printf("staSSID=%s ssidLen=%d staPSWD=%s pswdLen=%d\n", staConfig.ssid, strlen(staConfig.ssid), staConfig.password, strlen(staConfig.password));
 
 	lum_getDeviceMac(macaddr);
 	lumDebug("mac="MACSTR"\n", MAC2STR(macaddr));
@@ -71,33 +70,5 @@ void USER_FUNC lum_platformInit(void)
 	os_timer_arm(&g_APConnectTimer, 1000, 0);
 }
 
-
-void USER_FUNC lum_SaveConfigData(DEVICE_CONFIG_DATA* configData)
-{
-	U32 configLen;
-
-	configLen = sizeof(DEVICE_CONFIG_DATA);
-	if(configLen > SPI_FLASH_SEC_SIZE)
-	{
-		lumError("Save Data too long! \n");
-		return;
-	}
-	spi_flash_erase_sector(USER_CONFIG_DATA_FLASH_SECTOR);
-	spi_flash_write(USER_CONFIG_DATA_FLASH_SECTOR*SPI_FLASH_SEC_SIZE, (U32*)configData, configLen);
-}
-
-
-void USER_FUNC lum_LoadConfigData(DEVICE_CONFIG_DATA* configData)
-{
-	U32 configLen;
-
-	configLen = sizeof(DEVICE_CONFIG_DATA);
-	if(configLen > SPI_FLASH_SEC_SIZE)
-	{
-		lumError("Read Data too long! \n");
-		return;
-	}
-	spi_flash_read(USER_CONFIG_DATA_FLASH_SECTOR*SPI_FLASH_SEC_SIZE, (U32*)configData, configLen);
-}
 
 

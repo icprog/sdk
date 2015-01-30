@@ -15,7 +15,6 @@
 #include "espconn.h"
 
 
-#include "user_interface.h"
 #include "lumlink/lumCommon.h"
 #include "lumlink/lumSocketAes.h"
 #include "lumlink/lumMessageTask.h"
@@ -76,7 +75,7 @@ static void USER_FUNC lum_udpSocketRecv(void *arg, char *pusrdata, unsigned shor
 		}
 		memset(pDecryptData, 0, (length+1));
 		lum_getRecvSocketData((U8*)pusrdata, pDecryptData, MSG_FROM_UDP);
-		lum_showHexData(pDecryptData, length);
+		lum_showHexData("<===", pDecryptData, length);
 
 		os_memcpy(&ipAddr, g_UDPespconn.proto.udp->remote_ip, SOCKET_IP_LEN);
 		messageBody = lum_createTaskMessage(pDecryptData, ipAddr, MSG_FROM_UDP);

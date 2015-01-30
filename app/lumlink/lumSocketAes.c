@@ -219,7 +219,7 @@ U8* USER_FUNC lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* sock
 	pSocketHeader->openData.pv = SOCKET_HEADER_PV;
 	pSocketHeader->openData.flag.bEncrypt = pCreateData->bEncrypt;
 	pSocketHeader->openData.flag.bReback = pCreateData->bReback;
-	pSocketHeader->openData.flag.bLocked = 0;
+	pSocketHeader->openData.flag.bLocked = lum_getDeviceLockStatus();
 	lum_getDeviceMac(pSocketHeader->openData.mac);
 	aesDataLen = (pCreateData->bodyLen + SOCKET_HEADER_LEN - openDataLen);
 	//pSocketHeader->openData.dataLen = (pCreateData->bodyLen + SOCKET_HEADER_LEN - openDataLen); //aesDataLen
@@ -233,7 +233,7 @@ U8* USER_FUNC lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* sock
 	//fill body data
 	os_memcpy(tmpData+SOCKET_HEADER_LEN, pCreateData->bodyData, pCreateData->bodyLen);
 
-	lum_showHexData(tmpData, (pCreateData->bodyLen+SOCKET_HEADER_LEN));
+	lum_showHexData("===>", tmpData, (pCreateData->bodyLen+SOCKET_HEADER_LEN));
 	
 	mallocLen = SOCKET_HEADER_LEN + pCreateData->bodyLen + AES_BLOCKSIZE + 1;
 	pAesData = (U8*)lum_malloc(mallocLen);
@@ -245,9 +245,7 @@ U8* USER_FUNC lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* sock
 
 	os_memset(pAesData, 0, mallocLen);
 	os_memcpy(pAesData, tmpData, openDataLen);
-	lumDebug("11 aesDataLen =%d\n", aesDataLen);
 	lum_AesEncryptSocketData(tmpData+openDataLen, pAesData+openDataLen, &aesDataLen, pCreateData->keyType);
-	lumDebug("22 aesDataLen =%d\n", aesDataLen);
 	pSocketHeader = (SCOKET_HERADER_INFO*)pAesData;
 	pSocketHeader->openData.dataLen = aesDataLen;
 	*socketLen = aesDataLen + openDataLen;

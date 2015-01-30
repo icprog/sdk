@@ -195,7 +195,7 @@ static void USER_FUNC lum_rebackSetDeviceName(U8* pSocketDataRecv, MSG_ORIGIN so
 	os_memset(&createData, 0, sizeof(CREATE_SOCKET_DATA));
 
 	//Set device name
-	nameData.nameLen = pSocketDataRecv[SOCKET_HEADER_LEN+1];
+	nameData.nameLen = pSocketDataRecv[SOCKET_DATA_OFFSET];
 	nameData.nameLen = (nameData.nameLen > (DEVICE_NAME_LEN - 2))?(DEVICE_NAME_LEN - 2):nameData.nameLen;
 	os_memcpy(nameData.nameData, (pSocketDataRecv + SOCKET_HEADER_LEN + 2), nameData.nameLen);
 	lum_setDeviceName(&nameData);
@@ -217,12 +217,143 @@ static void USER_FUNC lum_rebackSetDeviceName(U8* pSocketDataRecv, MSG_ORIGIN so
 }
 
 
+/********************************************************************************
+User Request:		|24|dev_MAC|
+Device Response:	|24|Result|
+
+********************************************************************************/
+static void USER_FUNC lum_replyLockDevice(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	U8 deviceLockResp[10];
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+	U8 result;
+	U8 macAddr[DEVICE_MAC_LEN];
+
+
+	os_memset(deviceLockResp, 0, sizeof(deviceLockResp));
+	lum_getDeviceMac(macAddr);
+	
+	//Lock device
+	if(os_memcmp((pSocketDataRecv + SOCKET_DATA_OFFSET), macAddr, DEVICE_MAC_LEN) == 0)
+	{
+		lum_setDeviceLockStatus(1);
+		result = REBACK_SUCCESS_MESSAGE;
+	}
+	else
+	{
+		result = REBACK_FAILD_MESSAGE;
+	}
+
+	//Fill reback body
+	deviceLockResp[index] = MSG_CMD_LOCK_DEVICE;
+	index += 1;
+
+	deviceLockResp[index] = result;
+	index += 1;
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen = index;
+	createData.bodyData = deviceLockResp;
+	
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+}
+
+
+/********************************************************************************
+Request:		| 01 | Pin |
+Response:	| 01 | Pin|
+
+********************************************************************************/
+static void USER_FUNC lum_replySetGpioStatus(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	GPIO_STATUS* pGpioStatus;
+	U8 gpioStatusResp[20];
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+
+
+	os_memset(gpioStatusResp, 0, sizeof(gpioStatusResp));
+
+	//set gpio status
+	pGpioStatus = (GPIO_STATUS*)(pSocketDataRecv + SOCKET_DATA_OFFSET);
+	if(pGpioStatus->duty == 0xFF) //Open
+	{
+		//setSwitchStatus(SWITCH_OPEN);
+	}
+	else //Close
+	{
+		//setSwitchStatus(SWITCH_CLOSE);
+	}
+
+	//Set reback socket body
+	gpioStatusResp[index] = MSG_CMD_SET_GPIO_STATUS;
+	index += 1;
+	os_memcpy((gpioStatusResp + index), pGpioStatus, sizeof(GPIO_STATUS));
+	index += sizeof(GPIO_STATUS);
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen = index;
+	createData.bodyData = gpioStatusResp;
+	
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+}
+
+
+/********************************************************************************
+Request:		| 02 | Pin |
+Response:	| 02 | Pin|
+
+********************************************************************************/
+void USER_FUNC lum_replyGetGpioStatus(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	GPIO_STATUS* pGpioStatus;
+	U8 gpioStatusResp[20];
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+
+
+	os_memset(gpioStatusResp, 0, sizeof(gpioStatusResp));
+
+	//Get gpio status
+	pGpioStatus = (GPIO_STATUS*)(pSocketDataRecv + SOCKET_DATA_OFFSET);
+	//if(getSwitchStatus()) //Open
+	if(1)
+	{
+		pGpioStatus->duty = 0xFF;
+	}
+	else //Close
+	{
+		pGpioStatus->duty = 0x0;
+	}
+	pGpioStatus->res = 0xFF;
+
+	//Set reback socket body
+	gpioStatusResp[index] = MSG_CMD_GET_GPIO_STATUS;
+	index += 1;
+	os_memcpy((gpioStatusResp + index), pGpioStatus, sizeof(GPIO_STATUS));
+	index += sizeof(GPIO_STATUS);
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen = index;
+	createData.bodyData = gpioStatusResp;
+	
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+}
+
+
 static void USER_FUNC lum_messageTask(os_event_t *e)
 {
 	MSG_BODY* messageBody;
 
 
-	lumDebug("==> e->sig= 0x%X\n", e->sig);
+	lumDebug("e->sig= 0x%X\n", e->sig);
 	messageBody = (MSG_BODY*)e->par;
 	
 	switch(e->sig)
@@ -237,6 +368,18 @@ static void USER_FUNC lum_messageTask(os_event_t *e)
 
 	case MSG_CMD_SET_MODULE_NAME:
 		lum_rebackSetDeviceName(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	case MSG_CMD_LOCK_DEVICE:
+		lum_replyLockDevice(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	case MSG_CMD_SET_GPIO_STATUS:
+		lum_replySetGpioStatus(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	case MSG_CMD_GET_GPIO_STATUS:
+		lum_replyGetGpioStatus(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
 		break;
 
 	default:

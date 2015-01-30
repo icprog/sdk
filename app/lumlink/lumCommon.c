@@ -13,7 +13,6 @@
 
 #include "user_interface.h"
 #include "lumlink/lumCommon.h"
-#include "lumlink/lumPlatform.h"
 
 
 static U16 g_malloc_count = 0;
@@ -43,7 +42,7 @@ BOOL USER_FUNC lum_checkRevcSocket(U8* recvData, U8 RecvLen)
 }
 
 
-void USER_FUNC lum_showHexData(U8* data, U8 dataLen)
+void USER_FUNC lum_showHexData(S8* header, U8* data, U8 dataLen)
 {
 	U16 i;
 	U8 strData[512];
@@ -55,7 +54,7 @@ void USER_FUNC lum_showHexData(U8* data, U8 dataLen)
 	{
 		os_sprintf(strData+os_strlen(strData), "%02X ", data[i]);
 	}
-	lumDebug("%d data=%s\n", dataLen, strData);
+	lumDebug("%s (%d) %s\n", header, dataLen, strData);
 }
 
 
@@ -87,11 +86,64 @@ void USER_FUNC lum_free(void* pData)
 	lumDebug("**** lum_free g_malloc_count=%d\n", g_malloc_count);
 }
 
+static void USER_FUNC lum_writeConfigData(DEVICE_CONFIG_DATA* configData)
+{
+	U32 configLen;
+
+	configLen = sizeof(DEVICE_CONFIG_DATA);
+	if(configLen > SPI_FLASH_SEC_SIZE)
+	{
+		lumError("Save Data too long! \n");
+		return;
+	}
+	spi_flash_erase_sector(USER_CONFIG_DATA_FLASH_SECTOR);
+	spi_flash_write(USER_CONFIG_DATA_FLASH_SECTOR*SPI_FLASH_SEC_SIZE, (U32*)configData, configLen);
+}
+
+
+static void USER_FUNC lum_readConfigData(DEVICE_CONFIG_DATA* configData)
+{
+	U32 configLen;
+
+	configLen = sizeof(DEVICE_CONFIG_DATA);
+	if(configLen > SPI_FLASH_SEC_SIZE)
+	{
+		lumError("Read Data too long! \n");
+		return;
+	}
+	spi_flash_read(USER_CONFIG_DATA_FLASH_SECTOR*SPI_FLASH_SEC_SIZE, (U32*)configData, configLen);
+}
+
+
+static void USER_FUNC lum_SaveConfigData(void)
+{
+	lum_writeConfigData(&g_deviceConfig.deviceConfigData);
+}
+
+
+static void USER_FUNC lum_loadConfigData(void)
+{
+	lum_readConfigData(&g_deviceConfig.deviceConfigData);
+}
+
+
+U8 USER_FUNC lum_getDeviceLockStatus(void)
+{
+	return g_deviceConfig.deviceConfigData.bLocked;
+}
+
+
+void USER_FUNC lum_setDeviceLockStatus(U8 lockStatus)
+{
+	g_deviceConfig.deviceConfigData.bLocked = lockStatus;
+	lum_SaveConfigData();
+}
+
 
 void USER_FUNC lum_setDeviceName(DEVICE_NAME_DATA* nameData)
 {
 	os_memcpy(&g_deviceConfig.deviceConfigData.deviceName, nameData, sizeof(DEVICE_NAME_DATA));
-	lum_SaveConfigData(&g_deviceConfig.deviceConfigData);
+	lum_SaveConfigData();
 }
 
 
@@ -116,7 +168,7 @@ static void USER_FUNC lum_initDeviceNameData(void)
 void USER_FUNC lum_globalConfigDataInit(void)
 {
 	os_memset(&g_deviceConfig, 0, sizeof(GLOBAL_CONFIG_DATA));
-	lum_LoadConfigData(&g_deviceConfig.deviceConfigData);
+	lum_loadConfigData();
 	if(g_deviceConfig.deviceConfigData.lumitekFlag != LUMITEK_SW_FLAG)
 	{
 		//Device  first power on flag
@@ -126,7 +178,7 @@ void USER_FUNC lum_globalConfigDataInit(void)
 		lum_initDeviceNameData();
 
 	}
-	lum_SaveConfigData(&g_deviceConfig.deviceConfigData);
+	lum_SaveConfigData();
 }
 
 
