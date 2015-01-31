@@ -61,20 +61,20 @@ static void USER_FUNC lum_changeLedStatus(U8 ledStatus)
 
 	if(ledStatus == 2)
 	{
-		GPIO_OUTPUT_SET(GPIO_ID_PIN(BLUE_LED_IO_NUM), 1);
-	}
-	else
-	{
-		GPIO_OUTPUT_SET(GPIO_ID_PIN(BLUE_LED_IO_NUM), 0);
-	}
-
-	if(ledStatus == 3)
-	{
 		GPIO_OUTPUT_SET(GPIO_ID_PIN(GREEN_LED_IO_NUM), 1);
 	}
 	else
 	{
 		GPIO_OUTPUT_SET(GPIO_ID_PIN(GREEN_LED_IO_NUM), 0);
+	}
+
+	if(ledStatus == 3)
+	{
+		GPIO_OUTPUT_SET(GPIO_ID_PIN(BLUE_LED_IO_NUM), 1);
+	}
+	else
+	{
+		GPIO_OUTPUT_SET(GPIO_ID_PIN(BLUE_LED_IO_NUM), 0);
 	}
 }
 
