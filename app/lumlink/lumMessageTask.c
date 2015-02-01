@@ -21,6 +21,69 @@
 static os_event_t g_messageTaskQueue[MESSAGE_TASK_QUEUE_LEN];
 
 
+MSG_BODY* USER_FUNC lum_createTaskMessage(U8* socketData, U32 ipAddr, MSG_ORIGIN socketFrom)
+{
+	MSG_BODY* messageBody;
+	SCOKET_HERADER_INFO* socketHeader;
+	U16 msgBodyLen;
+
+
+	msgBodyLen = sizeof(MSG_BODY)+1;
+	messageBody = (MSG_BODY*)lum_malloc((U32)msgBodyLen);
+	if(messageBody == NULL)
+	{
+		return NULL;
+	}
+	os_memset(messageBody, 0, msgBodyLen);
+
+	socketHeader = (SCOKET_HERADER_INFO*)socketData;
+	messageBody->bReback = socketHeader->openData.flag.bReback;
+	messageBody->cmdData = socketData[SOCKET_HEADER_LEN];
+	messageBody->dataLen = socketHeader->openData.dataLen + SOCKET_OPEN_DATA_LEN;
+	messageBody->msgOrigin = socketFrom;
+	messageBody->pData = socketData;
+	messageBody->snIndex = socketHeader->snIndex;
+	messageBody->socketIp = ipAddr;
+	return messageBody;
+	
+}
+
+
+void USER_FUNC lum_sockRecvData(S8* recvData, U16 dataLen, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	if(!lum_checkRevcSocket((U8*)recvData, (U8)dataLen))
+	{
+		return;
+	}
+	else
+	{
+		U8* pDecryptData;
+		MSG_BODY* messageBody;
+
+
+		pDecryptData = (U8*)lum_malloc(dataLen+1);
+		if(pDecryptData == NULL)
+		{
+			lumDebug("malloc socket recvData faild length=%d socketFrom=%d\n", dataLen, socketFrom);
+			return;
+		}
+		os_memset(pDecryptData, 0, (dataLen+1));
+		lum_getRecvSocketData((U8*)recvData, pDecryptData, socketFrom);
+		lum_showHexData("<===", pDecryptData, dataLen);
+		messageBody = lum_createTaskMessage(pDecryptData, ipAddr, socketFrom);
+		if(messageBody == NULL)
+		{
+			lum_free(pDecryptData);
+		}
+		else
+		{
+			lum_postTaskMessage((U32)messageBody->cmdData, (U32)messageBody);
+		}
+	}
+
+}
+
+
 static BOOL USER_FUNC lum_createSendSocket(U8* oriSocketData, CREATE_SOCKET_DATA* pCreateData, MSG_ORIGIN socketFrom, U32 ipAddr)
 {
 	U8* sendData;

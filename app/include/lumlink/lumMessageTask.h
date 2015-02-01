@@ -97,6 +97,8 @@ typedef struct
 
 void lum_messageTaskInit(void);
 void lum_postTaskMessage(U32 cmdMessage, U32 paraPointer);
-
+MSG_BODY* lum_createTaskMessage(U8* socketData, U32 ipAddr, MSG_ORIGIN socketFrom);
+void USER_FUNC lum_sockRecvData(S8* recvData, U16 dataLen, MSG_ORIGIN socketFrom, U32 ipAddr);
 
 #endif
+

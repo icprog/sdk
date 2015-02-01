@@ -81,6 +81,8 @@ static void USER_FUNC lum_changeLedStatus(U8 ledStatus)
 
 static void USER_FUNC lum_ledTimerCallback(void *arg)
 {
+	U32 dateTime;
+	
 	if(g_ledIndex < 3)
 	{
 		g_ledIndex++;
@@ -90,7 +92,8 @@ static void USER_FUNC lum_ledTimerCallback(void *arg)
 		g_ledIndex = 1;
 	}
 	lum_changeLedStatus(g_ledIndex);
-	lumDebug("g_ledIndex=%d\n", g_ledIndex);
+	dateTime = system_get_time();
+	lumDebug("g_ledIndex=%d time=%d\n", g_ledIndex, dateTime);
 }
 
 

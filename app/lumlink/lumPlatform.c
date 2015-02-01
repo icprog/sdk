@@ -14,6 +14,7 @@
 #include "user_interface.h"
 
 #include "lumlink/lumCommon.h"
+#include "lumlink/lumTcpSocket.h"
 
 
 static os_timer_t g_APConnectTimer;
@@ -26,29 +27,31 @@ static void USER_FUNC lum_checkConnectStatus(U8 reset_flag)
 	U8 status;
 
     os_timer_disarm(&g_APConnectTimer);
-    wifi_get_ip_info(STATION_IF, &ipconfig);    
-    os_timer_setfn(&g_APConnectTimer, (os_timer_func_t *)lum_checkConnectStatus, NULL);
 	status = wifi_station_get_connect_status();
+	
 	if(status != STATION_GOT_IP)
-	{
+	{  
+	    os_timer_setfn(&g_APConnectTimer, (os_timer_func_t *)lum_checkConnectStatus, NULL);
     	os_timer_arm(&g_APConnectTimer, 1000, 0);
 	}
 	else
 	{
-		os_timer_arm(&g_APConnectTimer, 60000, 0);
+	    wifi_get_ip_info(STATION_IF, &ipconfig);
+		lumDebug("******IP=0x%X, status=%d\n", ipconfig.ip.addr, status);
+		//os_timer_arm(&g_APConnectTimer, 60000, 0);
+		lum_connBalanceServer();
 	}
 	//wifi_station_scan(struct scan_config * config,scan_done_cb_t cb)
-	lumDebug("******IP=0x%X, status=%d\n", ipconfig.ip.addr, status);
 }
 
 
 void USER_FUNC lum_platformInit(void)
 {
 	struct station_config staConfig;
-	char* staSSID = "TP-LINK_47D6";
-	char* staPSWD = "13736098070";
-	//char* staSSID = "KKKK";
-	//char* staPSWD = "12340000";
+	//char* staSSID = "TP-LINK_47D6";
+	//char* staPSWD = "13736098070";
+	char* staSSID = "KKKK";
+	char* staPSWD = "12340000";
 	U8 macaddr[6];
 
 
