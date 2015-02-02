@@ -62,7 +62,12 @@
 #define SOCKET_MAC_ADDR_OFFSET			2
 #define DEVICE_NAME_LEN					20
 
+//Heart beat interval
+#define MAX_HEARTBEAT_INTERVAL			20
+#define MIN_HEARTBEAT_INTERVAL			10
 
+#define INVALID_SERVER_ADDR			0xFFFFFFFFU
+#define INVALID_SERVER_PORT			0xFFFF
 #define INVALID_SN_NUM				0xFFFF
 #define TCP_NULL_IP					0
 
@@ -197,5 +202,9 @@ void lum_setDeviceLockStatus(U8 lockStatus);
 U16 lum_getSocketSn(BOOL needIncrease);
 void lum_setServerAddr(SOCKET_ADDR* pSocketAddr);
 void lum_getServerAddr(SOCKET_ADDR* pSocketAddr);
+
+void USER_FUNC lum_clearServerAesKey(void);
+void USER_FUNC lum_setServerAesKey(U8* serverKey);
+U8* USER_FUNC lum_getServerAesKey(U8* serverKey);
 
 #endif

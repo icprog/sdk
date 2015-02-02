@@ -122,12 +122,12 @@ void USER_FUNC lum_setSwitchStatus(SWITCH_STATUS action)
 
 	if(action == SWITCH_OPEN)
 	{
-		lum_openLedStatus();
+		lum_closeLedStatus();
 		g_switchStatus = SWITCH_CLOSE;
 	}
 	else
 	{
-		lum_closeLedStatus();
+		lum_openLedStatus();
 		g_switchStatus = SWITCH_OPEN;
 	}
 }

@@ -39,6 +39,7 @@ BOOL USER_FUNC lum_sendLocalTaskMessage(U16 cmdData, U8* msgData, U8 dataLen)
 	messageBody->dataLen = dataLen;
 	messageBody->msgOrigin = MSG_LOCAL_EVENT;
 	messageBody->pData = msgData;
+	messageBody->socketIp = TCP_NULL_IP;
 
 
 	lum_postTaskMessage((U32)cmdData, (U32)messageBody);
@@ -133,6 +134,7 @@ static BOOL USER_FUNC lum_createSendSocket(U8* oriSocketData, CREATE_SOCKET_DATA
 	{
 		return FALSE;
 	}
+	lumDebug("sendType=%d\n", socketFrom);
 	if(socketFrom == MSG_FROM_UDP)
 	{
 		lum_sendUdpData(sendData, socketLen, ipAddr);
@@ -147,6 +149,16 @@ static BOOL USER_FUNC lum_createSendSocket(U8* oriSocketData, CREATE_SOCKET_DATA
 	}
 	lum_free(sendData);
 	return TRUE;
+}
+
+
+static U16 USER_FUNC lum_getRandomNumber(U16 mixNum, U16 maxNum)
+{
+	U32 randomData;
+
+
+	randomData = system_get_time();
+	return mixNum + (randomData%(maxNum - mixNum));
 }
 
 
@@ -469,9 +481,150 @@ static void USER_FUNC lum_replyGetServerAddr(U8* pSocketDataRecv, MSG_ORIGIN soc
 	os_memcpy(&socketAddr.ipAddr, (pSocketDataRecv + SOCKET_DATA_OFFSET), SOCKET_IP_LEN);
 	os_memcpy(&socketAddr.port, (pSocketDataRecv + SOCKET_DATA_OFFSET + SOCKET_IP_LEN), 2);
 	lum_setServerAddr(&socketAddr);
+	lum_connServer();
 
 	tmp = (U8*)&socketAddr.ipAddr;
 	lumDebug("server ip=%d.%d.%d.%d  prot=%d\n", tmp[0], tmp[1], tmp[2], tmp[3], socketAddr.port);
+}
+
+
+/********************************************************************************
+User Request:		| 42 |
+Server Response:	| 42 | Key Len | Key |
+
+********************************************************************************/
+static void USER_FUNC lum_requstConnServer(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	U8 data;
+	CREATE_SOCKET_DATA createData;
+
+	data = MSG_CMD_REQUST_CONNECT;
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 0;
+	createData.bodyLen = 1;
+	createData.bodyData = &data;
+
+	lum_createSendSocket(pSocketDataRecv, &createData, MSG_FROM_TCP, ipAddr);
+}
+
+
+static void USER_FUNC lum_replyRequstConnServer(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	U8* pAesKey;
+	//U8 keyLen;
+
+
+	pAesKey = pSocketDataRecv + SOCKET_HEADER_LEN + 2; //cmd+len
+	lum_setServerAesKey(pAesKey);
+	lumDebug("Keylen=%d AesKey=%s\n", pSocketDataRecv[SOCKET_DATA_OFFSET], pAesKey);
+	lum_sendLocalTaskMessage(MSG_CMD_HEART_BEAT, NULL, 0);
+}
+
+
+
+/********************************************************************************
+Request:|61|
+
+Request:|61|Response:|61|Interval|
+Interval£º2-Byte
+
+********************************************************************************/
+static void USER_FUNC lum_replyUdpHeartBeat(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	U8 heartBeatResp[10];
+	U16 intervalData = 0;
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+
+
+	os_memset(heartBeatResp, 0, sizeof(heartBeatResp));
+
+	//Fill CMD
+	heartBeatResp[index] = MSG_CMD_HEART_BEAT;
+	index += 1;
+
+	//Fill Interval
+	intervalData = lum_getRandomNumber(MIN_HEARTBEAT_INTERVAL, MAX_HEARTBEAT_INTERVAL);
+	intervalData = htons(intervalData);
+	os_memcpy(heartBeatResp+index, &intervalData, 2);
+	index += 2;
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen = index;
+	createData.bodyData = heartBeatResp;
+
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+}
+
+
+
+static os_timer_t g_heartBeatTimer;
+
+static void USER_FUNC lum_heartBeatTimerCallback(void *arg)
+{
+	lum_sendLocalTaskMessage(MSG_CMD_HEART_BEAT, NULL, 0);
+}
+
+
+static void USER_FUNC lum_setHeartBeatTimer(U16 intervel)
+{
+	os_timer_disarm(&g_heartBeatTimer);
+	os_timer_setfn(&g_heartBeatTimer, (os_timer_func_t *)lum_heartBeatTimerCallback, NULL);
+	os_timer_arm(&g_heartBeatTimer, (U32)intervel, 0);
+}
+
+
+
+
+static void USER_FUNC lum_replyTcpHeartBeat(U8* pSocketDataRecv)
+{
+	U16 interval;
+
+
+	os_memcpy(&interval, (pSocketDataRecv + SOCKET_DATA_OFFSET), 2);
+	interval = ntohs(interval);
+	lum_setHeartBeatTimer(interval);
+}
+
+
+
+static void USER_FUNC lum_requstTcpHeartBeat(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+
+	U8 data;
+	CREATE_SOCKET_DATA createData;
+
+	data = MSG_CMD_HEART_BEAT;
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 0;
+	createData.bodyLen = 1;
+	createData.bodyData = &data;
+
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+}
+
+
+
+void USER_FUNC rebackHeartBeat(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	if(socketFrom == MSG_LOCAL_EVENT)
+	{
+		lum_requstTcpHeartBeat(pSocketDataRecv, MSG_FROM_TCP, ipAddr);
+	}
+	else if(socketFrom == MSG_FROM_UDP)
+	{
+		lum_replyUdpHeartBeat(pSocketDataRecv, socketFrom, ipAddr);
+	}
+	else if(socketFrom == MSG_FROM_TCP)
+	{
+		lum_replyTcpHeartBeat(pSocketDataRecv);
+	}
 }
 
 
@@ -518,6 +671,21 @@ static void USER_FUNC lum_messageTask(os_event_t *e)
 		{
 			lum_replyGetServerAddr(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
 		}
+		break;
+
+	case MSG_CMD_REQUST_CONNECT:
+		if(messageBody->msgOrigin == MSG_LOCAL_EVENT)
+		{
+			lum_requstConnServer(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		}
+		else
+		{
+			lum_replyRequstConnServer(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		}
+		break;
+
+	case MSG_CMD_HEART_BEAT:
+		rebackHeartBeat(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
 		break;
 
 	default:

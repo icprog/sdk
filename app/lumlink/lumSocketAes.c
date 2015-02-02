@@ -30,7 +30,7 @@ BOOL USER_FUNC lum_getAesKeyData(AES_KEY_TYPE keyType, U8* keyData)
 	}
 	else if(keyType == AES_KEY_SERVER)
 	{
-		tmpKeyData = DEFAULT_AES_KEY; //g_deviceConfig.globalData.keyData.serverKey;
+		tmpKeyData = lum_getServerAesKey(NULL);
 	}
 	else
 	{
@@ -82,18 +82,7 @@ AES_KEY_TYPE USER_FUNC lum_getSocketAesKeyType(MSG_ORIGIN msgOrigin, U8 bEncrypt
 	}
 	else if(msgOrigin == MSG_FROM_TCP)
 	{
-#if 0
-		if(g_deviceConfig.globalData.keyData.serverAesKeyValid)
-		{
-			keyType = AES_KEY_SERVER;
-		}
-		else
-		{
-			keyType = AES_KEY_DEFAULT;
-		}
-#else
 		keyType = AES_KEY_SERVER;
-#endif
 	}
 	return keyType;
 

@@ -191,6 +191,41 @@ void USER_FUNC lum_getServerAddr(SOCKET_ADDR* pSocketAddr)
 }
 
 
+void USER_FUNC lum_clearServerAesKey(void)
+{
+	g_deviceConfig.globalData.keyData.serverAesKeyValid = FALSE;
+	os_memset(g_deviceConfig.globalData.keyData.serverKey, 0, AES_KEY_LEN);
+}
+
+
+void USER_FUNC lum_setServerAesKey(U8* serverKey)
+{
+	os_memcpy(g_deviceConfig.globalData.keyData.serverKey, serverKey, AES_KEY_LEN);
+	g_deviceConfig.globalData.keyData.serverAesKeyValid = TRUE;
+}
+
+
+U8* USER_FUNC lum_getServerAesKey(U8* serverKey)
+{
+	U8* pAesKey;
+
+
+	if(g_deviceConfig.globalData.keyData.serverAesKeyValid)
+	{
+		pAesKey = g_deviceConfig.globalData.keyData.serverKey;
+	}
+	else
+	{
+		pAesKey = DEFAULT_AES_KEY;
+	}
+	if(serverKey != NULL)
+	{
+		os_memcpy(serverKey, g_deviceConfig.globalData.keyData.serverKey, AES_KEY_LEN);
+	}
+	return g_deviceConfig.globalData.keyData.serverKey;
+}
+
+
 void USER_FUNC lum_globalConfigDataInit(void)
 {
 	os_memset(&g_deviceConfig, 0, sizeof(GLOBAL_CONFIG_DATA));
