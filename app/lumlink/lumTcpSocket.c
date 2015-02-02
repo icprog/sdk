@@ -37,7 +37,7 @@ static void USER_FUNC lum_tcpRecvCallback(void *arg, char *pusrdata, unsigned sh
 {
 	lumDebug("lum_tcpRecvCallback\n");
 
-	lum_sockRecvData(pusrdata, length, MSG_FROM_TCP, 0);
+	lum_sockRecvData(pusrdata, length, MSG_FROM_TCP, TCP_NULL_IP);
 }
 
 static void USER_FUNC lum_tcpSentCallback(void *arg)
@@ -66,6 +66,7 @@ static void USER_FUNC lum_tcpConnectCallback(void *arg)
     espconn_regist_recvcb(pespconn, lum_tcpRecvCallback);
     espconn_regist_sentcb(pespconn, lum_tcpSentCallback);
    // user_esp_platform_sent(pespconn);
+   lum_sendLocalTaskMessage(MSG_CMD_GET_SERVER_ADDR, NULL, 0);
 }
 
 

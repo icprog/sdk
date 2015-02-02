@@ -165,6 +165,32 @@ static void USER_FUNC lum_initDeviceNameData(void)
 }
 
 
+U16 USER_FUNC lum_getSocketSn(BOOL needIncrease)
+{
+	if(needIncrease)
+	{
+		g_deviceConfig.globalData.socketSn++;
+		if(g_deviceConfig.globalData.socketSn >= INVALID_SN_NUM)
+		{
+			g_deviceConfig.globalData.socketSn = 0;
+		}
+	}
+	return g_deviceConfig.globalData.socketSn;
+}
+
+
+void USER_FUNC lum_setServerAddr(SOCKET_ADDR* pSocketAddr)
+{
+	os_memcpy(&g_deviceConfig.globalData.tcpServerAddr, pSocketAddr, sizeof(SOCKET_ADDR));
+}
+
+
+void USER_FUNC lum_getServerAddr(SOCKET_ADDR* pSocketAddr)
+{
+	os_memcpy(pSocketAddr, &g_deviceConfig.globalData.tcpServerAddr, sizeof(SOCKET_ADDR));
+}
+
+
 void USER_FUNC lum_globalConfigDataInit(void)
 {
 	os_memset(&g_deviceConfig, 0, sizeof(GLOBAL_CONFIG_DATA));

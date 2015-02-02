@@ -21,6 +21,31 @@
 static os_event_t g_messageTaskQueue[MESSAGE_TASK_QUEUE_LEN];
 
 
+BOOL USER_FUNC lum_sendLocalTaskMessage(U16 cmdData, U8* msgData, U8 dataLen)
+{
+	MSG_BODY* messageBody;
+	U16 msgBodyLen;
+
+
+	msgBodyLen = sizeof(MSG_BODY)+1;
+	messageBody = (MSG_BODY*)lum_malloc((U32)msgBodyLen);
+	if(messageBody == NULL)
+	{
+		return FALSE;
+	}
+	os_memset(messageBody, 0, msgBodyLen);
+
+	messageBody->cmdData = cmdData;
+	messageBody->dataLen = dataLen;
+	messageBody->msgOrigin = MSG_LOCAL_EVENT;
+	messageBody->pData = msgData;
+
+
+	lum_postTaskMessage((U32)cmdData, (U32)messageBody);
+	return TRUE;
+}
+
+
 MSG_BODY* USER_FUNC lum_createTaskMessage(U8* socketData, U32 ipAddr, MSG_ORIGIN socketFrom)
 {
 	MSG_BODY* messageBody;
@@ -90,18 +115,19 @@ static BOOL USER_FUNC lum_createSendSocket(U8* oriSocketData, CREATE_SOCKET_DATA
 	U8 socketLen;
 	SCOKET_HERADER_INFO* pSocketinfo;
 
+
 	pCreateData->keyType = lum_getSocketAesKeyType(socketFrom, pCreateData->bEncrypt);
 
-	pSocketinfo = (SCOKET_HERADER_INFO*)oriSocketData;
 	if(pCreateData->bReback == 1)
 	{
+		pSocketinfo = (SCOKET_HERADER_INFO*)oriSocketData;
 		pCreateData->snIndex = pSocketinfo->snIndex;
 	}
 	else
 	{
-		//
+		pCreateData->snIndex = lum_getSocketSn(TRUE);
 	}
-	
+
 	sendData = lum_createSendSocketData(pCreateData, &socketLen);
 	if(sendData == NULL)
 	{
@@ -113,7 +139,7 @@ static BOOL USER_FUNC lum_createSendSocket(U8* oriSocketData, CREATE_SOCKET_DATA
 	}
 	else if(socketFrom == MSG_FROM_TCP)
 	{
-		//send TCP socket
+		lum_sendTcpData(sendData, socketLen);
 	}
 	else
 	{
@@ -411,6 +437,44 @@ void USER_FUNC lum_replyGetGpioStatus(U8* pSocketDataRecv, MSG_ORIGIN socketFrom
 }
 
 
+
+/********************************************************************************
+UserRequest:		| 81 |
+Server Response:	| 81 | IP Address | Port |
+
+********************************************************************************/
+static void USER_FUNC lum_GetServerAddr(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	U8 data;
+	CREATE_SOCKET_DATA createData;
+
+	data = MSG_CMD_GET_SERVER_ADDR;
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 0;
+	createData.bodyLen = 1;
+	createData.bodyData = &data;
+
+	lum_createSendSocket(pSocketDataRecv, &createData, MSG_FROM_TCP, ipAddr);
+}
+
+
+
+static void USER_FUNC lum_replyGetServerAddr(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	SOCKET_ADDR socketAddr;
+	U8* tmp;
+
+	os_memcpy(&socketAddr.ipAddr, (pSocketDataRecv + SOCKET_DATA_OFFSET), SOCKET_IP_LEN);
+	os_memcpy(&socketAddr.port, (pSocketDataRecv + SOCKET_DATA_OFFSET + SOCKET_IP_LEN), 2);
+	lum_setServerAddr(&socketAddr);
+
+	tmp = (U8*)&socketAddr.ipAddr;
+	lumDebug("server ip=%d.%d.%d.%d  prot=%d\n", tmp[0], tmp[1], tmp[2], tmp[3], socketAddr.port);
+}
+
+
 static void USER_FUNC lum_messageTask(os_event_t *e)
 {
 	MSG_BODY* messageBody;
@@ -443,6 +507,17 @@ static void USER_FUNC lum_messageTask(os_event_t *e)
 
 	case MSG_CMD_GET_GPIO_STATUS:
 		lum_replyGetGpioStatus(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	case MSG_CMD_GET_SERVER_ADDR:
+		if(messageBody->msgOrigin == MSG_LOCAL_EVENT)
+		{
+			lum_GetServerAddr(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		}
+		else
+		{
+			lum_replyGetServerAddr(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		}
 		break;
 
 	default:

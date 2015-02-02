@@ -63,6 +63,10 @@
 #define DEVICE_NAME_LEN					20
 
 
+#define INVALID_SN_NUM				0xFFFF
+#define TCP_NULL_IP					0
+
+
 #define USER_FUNC	ICACHE_FLASH_ATTR
 #define USER_CONFIG_DATA_FLASH_SECTOR	0x3C
 
@@ -189,5 +193,9 @@ void lum_setDeviceName(DEVICE_NAME_DATA* nameData);
 
 U8 lum_getDeviceLockStatus(void);
 void lum_setDeviceLockStatus(U8 lockStatus);
+
+U16 lum_getSocketSn(BOOL needIncrease);
+void lum_setServerAddr(SOCKET_ADDR* pSocketAddr);
+void lum_getServerAddr(SOCKET_ADDR* pSocketAddr);
 
 #endif
