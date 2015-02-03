@@ -24,7 +24,7 @@ typedef enum
 
 void USER_FUNC lum_connBalanceServer(void);
 void USER_FUNC lum_sendTcpData(U8* socketData, U8 dataLen);
-void USER_FUNC lum_connServer(void);
+void USER_FUNC lum_connActualServer(void);
 
 
 #endif

@@ -66,7 +66,7 @@ static void USER_FUNC lum_tcpReconnectCallback(void *arg, sint8 err)
 	else
 	{
 		lum_clearServerAesKey();
-		lum_connServer();
+		lum_connActualServer();
 	}
 }
 
@@ -101,6 +101,9 @@ static void USER_FUNC lum_tcpSocketInit(U16 port, U32 ipAddr)
 	tmp = (U8*)&ipAddr;
 	lumDebug("ipAddr=%d.%d.%d.%d port=%d\n", tmp[0], tmp[1], tmp[2], tmp[3], port);
 	
+	os_memset(&serverConnHandle, 0, sizeof(struct espconn));
+	os_memset(&serverTcpHandle, 0, sizeof(struct _esp_tcp));
+
 	serverConnHandle.proto.tcp = &serverTcpHandle;
 	serverConnHandle.type = ESPCONN_TCP;
 	serverConnHandle.state = ESPCONN_NONE;
@@ -117,7 +120,10 @@ static void USER_FUNC lum_tcpSocketInit(U16 port, U32 ipAddr)
 static void USER_FUNC lum_disconnectTcpServer(void)
 {
 	espconn_disconnect(&serverConnHandle);
-	espconn_delete(&serverConnHandle);
+	if(g_tcpConnStatus == TCP_BALANCE_CONNECTED)
+	{
+		espconn_delete(&serverConnHandle);
+	}
 }
 
 
@@ -125,14 +131,14 @@ void USER_FUNC lum_connBalanceServer(void)
 {
 	if(g_tcpConnStatus != TCP_NONE_CONNECT)
 	{
-		lum_disconnectTcpServer();
+		//lum_disconnectTcpServer();
 	}
 	lum_tcpSocketInit(TCP_SOCKET_PORT, ipaddr_addr(TCP_SERVER_IP));
 	g_tcpConnStatus = TCP_BALANCE_CONNECTING;
 }
 
 
-void USER_FUNC lum_connServer(void)
+void USER_FUNC lum_connActualServer(void)
 {
 	SOCKET_ADDR socketAddr;
 
@@ -142,3 +148,5 @@ void USER_FUNC lum_connServer(void)
 	lum_tcpSocketInit(socketAddr.port, socketAddr.ipAddr);
 	g_tcpConnStatus = TCP_SERVER_CONNECTING;
 }
+
+

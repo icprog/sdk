@@ -55,12 +55,20 @@ static BOOL USER_FUNC lum_setAesKey(AES_CTX* aesCtx, AES_KEY_TYPE keyType, AES_D
 	{
 		ret = FALSE;
 	}
+	else if(os_strlen(aesKey) != AES_KEY_LEN)
+	{
+		ret = FALSE;
+	}
 	else
 	{
 		AES_set_key(aesCtx, aesKey, aesKey, AES_MODE_128);
 		if(aesType == AES_DECRYPTION)
 		{
 			AES_convert_key(aesCtx);
+		}
+		else
+		{
+			lumDebug("Encrypt AES key = %s\n", aesKey);
 		}
 	}
 	return ret;
@@ -200,6 +208,7 @@ U8* USER_FUNC lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* sock
 	U8 aesDataLen;
 	U16 mallocLen;
 	U8 openDataLen = SOCKET_OPEN_DATA_LEN;
+	BOOL bEmcryptSuccess;
 
 
 	os_memset(tmpData, 0, sizeof(tmpData));
@@ -234,7 +243,12 @@ U8* USER_FUNC lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* sock
 
 	os_memset(pAesData, 0, mallocLen);
 	os_memcpy(pAesData, tmpData, openDataLen);
-	lum_AesEncryptSocketData(tmpData+openDataLen, pAesData+openDataLen, &aesDataLen, pCreateData->keyType);
+	bEmcryptSuccess = lum_AesEncryptSocketData(tmpData+openDataLen, pAesData+openDataLen, &aesDataLen, pCreateData->keyType);
+	if(!bEmcryptSuccess)
+	{
+		lum_free(pAesData);
+		return NULL;
+	}
 	pSocketHeader = (SCOKET_HERADER_INFO*)pAesData;
 	pSocketHeader->openData.dataLen = aesDataLen;
 	*socketLen = aesDataLen + openDataLen;

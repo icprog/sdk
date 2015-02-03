@@ -85,6 +85,7 @@ void USER_FUNC lum_sockRecvData(S8* recvData, U16 dataLen, MSG_ORIGIN socketFrom
 	{
 		U8* pDecryptData;
 		MSG_BODY* messageBody;
+		BOOL bDecryptSuccess;
 
 
 		pDecryptData = (U8*)lum_malloc(dataLen+1);
@@ -94,7 +95,12 @@ void USER_FUNC lum_sockRecvData(S8* recvData, U16 dataLen, MSG_ORIGIN socketFrom
 			return;
 		}
 		os_memset(pDecryptData, 0, (dataLen+1));
-		lum_getRecvSocketData((U8*)recvData, pDecryptData, socketFrom);
+		bDecryptSuccess = lum_getRecvSocketData((U8*)recvData, pDecryptData, socketFrom);
+		if(!bDecryptSuccess)
+		{
+			lum_free(pDecryptData);
+			return;
+		}
 		lum_showHexData("<===", pDecryptData, dataLen);
 		messageBody = lum_createTaskMessage(pDecryptData, ipAddr, socketFrom);
 		if(messageBody == NULL)
@@ -107,6 +113,27 @@ void USER_FUNC lum_sockRecvData(S8* recvData, U16 dataLen, MSG_ORIGIN socketFrom
 		}
 	}
 
+}
+
+
+static U8* lum_showSendType(MSG_ORIGIN socketFrom)
+{
+	U8* sendType;
+
+	if(socketFrom == MSG_FROM_UDP)
+	{
+		sendType = "UDP";
+	}
+	else if(socketFrom == MSG_FROM_TCP)
+	{
+		sendType = "TCP";
+	}
+	else if(socketFrom == MSG_LOCAL_EVENT)
+	{
+		sendType = "Local";
+	}
+	lumDebug("*** %s ***\n", sendType);
+	return sendType;
 }
 
 
@@ -134,7 +161,7 @@ static BOOL USER_FUNC lum_createSendSocket(U8* oriSocketData, CREATE_SOCKET_DATA
 	{
 		return FALSE;
 	}
-	lumDebug("sendType=%d\n", socketFrom);
+	lum_showSendType(socketFrom);
 	if(socketFrom == MSG_FROM_UDP)
 	{
 		lum_sendUdpData(sendData, socketLen, ipAddr);
@@ -451,8 +478,8 @@ void USER_FUNC lum_replyGetGpioStatus(U8* pSocketDataRecv, MSG_ORIGIN socketFrom
 
 
 /********************************************************************************
-UserRequest:		| 81 |
-Server Response:	| 81 | IP Address | Port |
+UserRequest:		| 41 |
+Server Response:	| 41 | IP Address | Port |
 
 ********************************************************************************/
 static void USER_FUNC lum_GetServerAddr(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
@@ -480,8 +507,9 @@ static void USER_FUNC lum_replyGetServerAddr(U8* pSocketDataRecv, MSG_ORIGIN soc
 
 	os_memcpy(&socketAddr.ipAddr, (pSocketDataRecv + SOCKET_DATA_OFFSET), SOCKET_IP_LEN);
 	os_memcpy(&socketAddr.port, (pSocketDataRecv + SOCKET_DATA_OFFSET + SOCKET_IP_LEN), 2);
+	socketAddr.port = ntohs(socketAddr.port);
 	lum_setServerAddr(&socketAddr);
-	lum_connServer();
+	lum_connActualServer();
 
 	tmp = (U8*)&socketAddr.ipAddr;
 	lumDebug("server ip=%d.%d.%d.%d  prot=%d\n", tmp[0], tmp[1], tmp[2], tmp[3], socketAddr.port);

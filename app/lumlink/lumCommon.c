@@ -83,7 +83,7 @@ void USER_FUNC lum_free(void* pData)
 	
 	os_free(pData);
 	g_malloc_count--;
-	lumDebug("**** lum_free g_malloc_count=%d\n", g_malloc_count);
+	//lumDebug("**** lum_free g_malloc_count=%d\n", g_malloc_count);
 }
 
 static void USER_FUNC lum_writeConfigData(DEVICE_CONFIG_DATA* configData)
@@ -222,7 +222,7 @@ U8* USER_FUNC lum_getServerAesKey(U8* serverKey)
 	{
 		os_memcpy(serverKey, g_deviceConfig.globalData.keyData.serverKey, AES_KEY_LEN);
 	}
-	return g_deviceConfig.globalData.keyData.serverKey;
+	return pAesKey;
 }
 
 
