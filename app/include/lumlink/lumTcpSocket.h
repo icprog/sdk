@@ -15,6 +15,7 @@ typedef enum
 	TCP_NONE_CONNECT,
 	TCP_BALANCE_CONNECTING,
 	TCP_BALANCE_CONNECTED,
+	TCP_BALANCE_DISCONNECTING,
 	TCP_BALANCE_DISCONNECT,
 	TCP_SERVER_CONNECTING,
 	TCP_SERVER_CONNECTED,
@@ -25,6 +26,7 @@ typedef enum
 void USER_FUNC lum_connBalanceServer(void);
 void USER_FUNC lum_sendTcpData(U8* socketData, U8 dataLen);
 void USER_FUNC lum_connActualServer(void);
+void USER_FUNC lum_disconnectBalanceServer(void);
 
 
 #endif

@@ -61,12 +61,12 @@ static void USER_FUNC lum_tcpReconnectCallback(void *arg, sint8 err)
 	lumDebug("lum_tcpReconnectCallback err =%d g_tcpConnStatus=%d\n", err, g_tcpConnStatus);
 	if(g_tcpConnStatus == TCP_BALANCE_CONNECTING || g_tcpConnStatus == TCP_BALANCE_CONNECTED)
 	{
-		lum_connBalanceServer();
+		//lum_connBalanceServer();
 	}
-	else
+	else if(g_tcpConnStatus == TCP_SERVER_CONNECTING || g_tcpConnStatus == TCP_SERVER_CONNECTED)
 	{
 		lum_clearServerAesKey();
-		lum_connActualServer();
+		//lum_connActualServer();
 	}
 }
 
@@ -85,13 +85,23 @@ static void USER_FUNC lum_tcpConnectCallback(void *arg)
 		lum_sendLocalTaskMessage(MSG_CMD_GET_SERVER_ADDR, NULL, 0);
 		g_tcpConnStatus = TCP_BALANCE_CONNECTED;
    }
-   else
+   else if(g_tcpConnStatus == TCP_SERVER_CONNECTING)
    {
    		lum_sendLocalTaskMessage(MSG_CMD_REQUST_CONNECT, NULL, 0);
    		g_tcpConnStatus = TCP_SERVER_CONNECTED;
    }
 }
 
+
+static void USER_FUNC lum_tcpDisconnectCallback(void *arg)
+{
+	lumDebug("lum_tcpDisconnectCallback g_tcpConnStatus=%d\n", g_tcpConnStatus);
+	if(g_tcpConnStatus == TCP_BALANCE_DISCONNECTING)
+	{
+		espconn_delete(&serverConnHandle);
+	}
+	lum_connActualServer();
+}
 
 static void USER_FUNC lum_tcpSocketInit(U16 port, U32 ipAddr)
 {
@@ -113,26 +123,20 @@ static void USER_FUNC lum_tcpSocketInit(U16 port, U32 ipAddr)
 
 	espconn_regist_connectcb(&serverConnHandle, lum_tcpConnectCallback);
 	espconn_regist_reconcb(&serverConnHandle, lum_tcpReconnectCallback);
+	espconn_regist_disconcb(&serverConnHandle, lum_tcpDisconnectCallback);
 	espconn_connect(&serverConnHandle);
 }
 
 
-static void USER_FUNC lum_disconnectTcpServer(void)
+void USER_FUNC lum_disconnectBalanceServer(void)
 {
 	espconn_disconnect(&serverConnHandle);
-	if(g_tcpConnStatus == TCP_BALANCE_CONNECTED)
-	{
-		espconn_delete(&serverConnHandle);
-	}
+	g_tcpConnStatus = TCP_BALANCE_DISCONNECTING;
 }
 
 
 void USER_FUNC lum_connBalanceServer(void)
 {
-	if(g_tcpConnStatus != TCP_NONE_CONNECT)
-	{
-		//lum_disconnectTcpServer();
-	}
 	lum_tcpSocketInit(TCP_SOCKET_PORT, ipaddr_addr(TCP_SERVER_IP));
 	g_tcpConnStatus = TCP_BALANCE_CONNECTING;
 }
@@ -143,7 +147,6 @@ void USER_FUNC lum_connActualServer(void)
 	SOCKET_ADDR socketAddr;
 
 
-	lum_disconnectTcpServer();
 	lum_getServerAddr(&socketAddr);
 	lum_tcpSocketInit(socketAddr.port, socketAddr.ipAddr);
 	g_tcpConnStatus = TCP_SERVER_CONNECTING;

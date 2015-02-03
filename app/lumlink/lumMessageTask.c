@@ -509,7 +509,7 @@ static void USER_FUNC lum_replyGetServerAddr(U8* pSocketDataRecv, MSG_ORIGIN soc
 	os_memcpy(&socketAddr.port, (pSocketDataRecv + SOCKET_DATA_OFFSET + SOCKET_IP_LEN), 2);
 	socketAddr.port = ntohs(socketAddr.port);
 	lum_setServerAddr(&socketAddr);
-	lum_connActualServer();
+	lum_disconnectBalanceServer();
 
 	tmp = (U8*)&socketAddr.ipAddr;
 	lumDebug("server ip=%d.%d.%d.%d  prot=%d\n", tmp[0], tmp[1], tmp[2], tmp[3], socketAddr.port);
@@ -554,8 +554,7 @@ static void USER_FUNC lum_replyRequstConnServer(U8* pSocketDataRecv, MSG_ORIGIN 
 
 /********************************************************************************
 Request:|61|
-
-Request:|61|Response:|61|Interval|
+Response:|61|Interval|
 Interval£º2-Byte
 
 ********************************************************************************/
@@ -600,9 +599,13 @@ static void USER_FUNC lum_heartBeatTimerCallback(void *arg)
 
 static void USER_FUNC lum_setHeartBeatTimer(U16 intervel)
 {
+	U32 delayTime;
+
+
+	delayTime = intervel*1000; //cover ms  to S
 	os_timer_disarm(&g_heartBeatTimer);
 	os_timer_setfn(&g_heartBeatTimer, (os_timer_func_t *)lum_heartBeatTimerCallback, NULL);
-	os_timer_arm(&g_heartBeatTimer, (U32)intervel, 0);
+	os_timer_arm(&g_heartBeatTimer, delayTime, 0);
 }
 
 
@@ -615,6 +618,8 @@ static void USER_FUNC lum_replyTcpHeartBeat(U8* pSocketDataRecv)
 
 	os_memcpy(&interval, (pSocketDataRecv + SOCKET_DATA_OFFSET), 2);
 	interval = ntohs(interval);
+	lumDebug("TCP interval = %d\n", interval);
+	
 	lum_setHeartBeatTimer(interval);
 }
 
