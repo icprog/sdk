@@ -116,7 +116,7 @@ static void USER_FUNC lum_PKCS5PaddingRemoveData(U8* inputData, U8* dataLen, AES
 {
 	U8	removeData = inputData[*dataLen - 1];
 
-	if(keyType == AES_KEY_OPEN)
+	if(keyType == AES_KEY_OPEN || removeData > AES_KEY_LEN)
 	{
 		return;
 	}

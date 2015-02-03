@@ -111,6 +111,11 @@ void USER_FUNC lum_sockRecvData(S8* recvData, U16 dataLen, MSG_ORIGIN socketFrom
 		{
 			lum_postTaskMessage((U32)messageBody->cmdData, (U32)messageBody);
 		}
+		//防止多条命令连续来时，密钥错位
+		if(messageBody->cmdData == MSG_CMD_REQUST_CONNECT)
+		{
+			lum_setServerAesKey(pDecryptData + SOCKET_HEADER_LEN + 2); //set AES key Immediately
+		}
 	}
 
 }
@@ -540,13 +545,14 @@ static void USER_FUNC lum_requstConnServer(U8* pSocketDataRecv, MSG_ORIGIN socke
 
 static void USER_FUNC lum_replyRequstConnServer(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
 {
-	U8* pAesKey;
+	//U8* pAesKey;
 	//U8 keyLen;
 
 
-	pAesKey = pSocketDataRecv + SOCKET_HEADER_LEN + 2; //cmd+len
-	lum_setServerAesKey(pAesKey);
-	lumDebug("Keylen=%d AesKey=%s\n", pSocketDataRecv[SOCKET_DATA_OFFSET], pAesKey);
+	//pAesKey = pSocketDataRecv + SOCKET_HEADER_LEN + 2; //cmd+len
+	//lum_setServerAesKey(pAesKey); 
+	//lumDebug("Keylen=%d AesKey=%s\n", pSocketDataRecv[SOCKET_DATA_OFFSET], pAesKey);
+	//收到命令立刻设置，防止多条命令同时到达，密钥错位 (设置密钥提前)
 	lum_sendLocalTaskMessage(MSG_CMD_HEART_BEAT, NULL, 0);
 }
 

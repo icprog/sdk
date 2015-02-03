@@ -29,12 +29,15 @@ BOOL USER_FUNC lum_checkRevcSocket(U8* recvData, U8 RecvLen)
 	lum_getDeviceMac(macAddr);
 	if((pOpenData->dataLen + SOCKET_OPEN_DATA_LEN) != RecvLen) //check Data length
 	{
+		lumDebug("Recv lenth error! dataLen=%d RecvLen=%d\n", pOpenData->dataLen, RecvLen);
 		return FALSE;
 	}
 	else if(os_memcmp(macAddr, pOpenData->mac, DEVICE_MAC_LEN) != 0)
 	{
 		if(os_memcmp(noMac, pOpenData->mac, DEVICE_MAC_LEN) != 0)
 		{
+			lumDebug("Recv mac error mac=%X:%X:%X:%X:%X:%X\n", pOpenData->mac[0], pOpenData->mac[1],
+				pOpenData->mac[2], pOpenData->mac[3],pOpenData->mac[4], pOpenData->mac[5]);
 			return FALSE;
 		}
 	}
