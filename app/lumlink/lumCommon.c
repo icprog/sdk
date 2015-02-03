@@ -246,4 +246,41 @@ void USER_FUNC lum_globalConfigDataInit(void)
 }
 
 
+U8* USER_FUNC lum_showSendType(MSG_ORIGIN socketFrom, BOOL bSend)
+{
+	static U8 showData[25];
+	U8* sendType;
+	U32 curTime;
+	U8* dir; 
+
+	os_memset(showData, 0, sizeof(showData));
+	curTime = system_get_time();
+	curTime /= 1000000; // us-->S
+	
+	if(socketFrom == MSG_FROM_UDP)
+	{
+		sendType = "UDP";
+	}
+	else if(socketFrom == MSG_FROM_TCP)
+	{
+		sendType = "TCP";
+	}
+	else if(socketFrom == MSG_LOCAL_EVENT)
+	{
+		sendType = "Local";
+	}
+
+	if(bSend)
+	{
+		dir = "===>";
+	}
+	else
+	{
+		dir = "<===";
+	}
+	os_sprintf(showData, "(%04d %s)%s", curTime, sendType, dir);
+	return showData;
+}
+
+
 

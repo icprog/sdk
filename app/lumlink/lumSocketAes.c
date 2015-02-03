@@ -66,10 +66,6 @@ static BOOL USER_FUNC lum_setAesKey(AES_CTX* aesCtx, AES_KEY_TYPE keyType, AES_D
 		{
 			AES_convert_key(aesCtx);
 		}
-		else
-		{
-			lumDebug("Encrypt AES key = %s\n", aesKey);
-		}
 	}
 	return ret;
 }
@@ -200,7 +196,7 @@ BOOL USER_FUNC lum_getRecvSocketData(U8* recvData, U8* decryptData, MSG_ORIGIN s
 }
 
 
-U8* USER_FUNC lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* socketLen)
+U8* USER_FUNC lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* socketLen, MSG_ORIGIN socketFrom)
 {
 	SCOKET_HERADER_INFO* pSocketHeader;
 	U8 tmpData[SOCKEY_MAX_DATA_LEN];
@@ -231,7 +227,7 @@ U8* USER_FUNC lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* sock
 	//fill body data
 	os_memcpy(tmpData+SOCKET_HEADER_LEN, pCreateData->bodyData, pCreateData->bodyLen);
 
-	lum_showHexData("===>", tmpData, (pCreateData->bodyLen+SOCKET_HEADER_LEN));
+	lum_showHexData(lum_showSendType(socketFrom, TRUE), tmpData, (pCreateData->bodyLen+SOCKET_HEADER_LEN));
 	
 	mallocLen = SOCKET_HEADER_LEN + pCreateData->bodyLen + AES_BLOCKSIZE + 1;
 	pAesData = (U8*)lum_malloc(mallocLen);

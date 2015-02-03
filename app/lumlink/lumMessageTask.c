@@ -101,7 +101,8 @@ void USER_FUNC lum_sockRecvData(S8* recvData, U16 dataLen, MSG_ORIGIN socketFrom
 			lum_free(pDecryptData);
 			return;
 		}
-		lum_showHexData("<===", pDecryptData, dataLen);
+		
+		lum_showHexData(lum_showSendType(socketFrom, FALSE), pDecryptData, dataLen);
 		messageBody = lum_createTaskMessage(pDecryptData, ipAddr, socketFrom);
 		if(messageBody == NULL)
 		{
@@ -118,27 +119,6 @@ void USER_FUNC lum_sockRecvData(S8* recvData, U16 dataLen, MSG_ORIGIN socketFrom
 		}
 	}
 
-}
-
-
-static U8* lum_showSendType(MSG_ORIGIN socketFrom)
-{
-	U8* sendType;
-
-	if(socketFrom == MSG_FROM_UDP)
-	{
-		sendType = "UDP";
-	}
-	else if(socketFrom == MSG_FROM_TCP)
-	{
-		sendType = "TCP";
-	}
-	else if(socketFrom == MSG_LOCAL_EVENT)
-	{
-		sendType = "Local";
-	}
-	lumDebug("*** %s ***\n", sendType);
-	return sendType;
 }
 
 
@@ -161,12 +141,11 @@ static BOOL USER_FUNC lum_createSendSocket(U8* oriSocketData, CREATE_SOCKET_DATA
 		pCreateData->snIndex = lum_getSocketSn(TRUE);
 	}
 
-	sendData = lum_createSendSocketData(pCreateData, &socketLen);
+	sendData = lum_createSendSocketData(pCreateData, &socketLen, socketFrom);
 	if(sendData == NULL)
 	{
 		return FALSE;
 	}
-	lum_showSendType(socketFrom);
 	if(socketFrom == MSG_FROM_UDP)
 	{
 		lum_sendUdpData(sendData, socketLen, ipAddr);
@@ -297,7 +276,7 @@ static void USER_FUNC lum_replyGetDeviceInfo(U8* pSocketDataRecv, MSG_ORIGIN soc
 	os_memcpy((deviceNameResp + index), pNameData->nameData, pNameData->nameLen);
 	index += pNameData->nameLen;
 
-	lumDebug("name=%s, nameLen=%d\n", pNameData->nameData, pNameData->nameLen);
+	//lumDebug("name=%s, nameLen=%d\n", pNameData->nameData, pNameData->nameLen);
 
 	//fill socket data
 	createData.bEncrypt = 1;
@@ -624,7 +603,7 @@ static void USER_FUNC lum_replyTcpHeartBeat(U8* pSocketDataRecv)
 
 	os_memcpy(&interval, (pSocketDataRecv + SOCKET_DATA_OFFSET), 2);
 	interval = ntohs(interval);
-	lumDebug("TCP interval = %d\n", interval);
+	//lumDebug("TCP interval = %d\n", interval);
 	
 	lum_setHeartBeatTimer(interval);
 }
@@ -649,8 +628,7 @@ static void USER_FUNC lum_requstTcpHeartBeat(U8* pSocketDataRecv, MSG_ORIGIN soc
 }
 
 
-
-void USER_FUNC rebackHeartBeat(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+static void USER_FUNC lum_replyHeartBeat(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
 {
 	if(socketFrom == MSG_LOCAL_EVENT)
 	{
@@ -664,6 +642,37 @@ void USER_FUNC rebackHeartBeat(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 i
 	{
 		lum_replyTcpHeartBeat(pSocketDataRecv);
 	}
+}
+
+
+/********************************************************************************
+Request:		| 66 |
+Response:	| 66 | Result |
+
+********************************************************************************/
+static void USER_FUNC lum_replyEnterSmartLink(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	U8 enterSmartLinkResp[10];
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+	U8 enterReson;
+
+
+	os_memset(enterSmartLinkResp, 0, sizeof(enterSmartLinkResp));
+
+	//Set reback socket body
+	enterSmartLinkResp[index] = MSG_CMD_ENTER_SMART_LINK;
+	index += 1;
+	enterSmartLinkResp[index] = REBACK_SUCCESS_MESSAGE;
+	index += 1;
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen = index;
+	createData.bodyData = enterSmartLinkResp;
+
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
 }
 
 
@@ -724,7 +733,11 @@ static void USER_FUNC lum_messageTask(os_event_t *e)
 		break;
 
 	case MSG_CMD_HEART_BEAT:
-		rebackHeartBeat(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		lum_replyHeartBeat(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	case MSG_CMD_ENTER_SMART_LINK:
+		lum_replyEnterSmartLink(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
 		break;
 
 	default:

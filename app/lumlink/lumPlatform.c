@@ -45,14 +45,16 @@ static void USER_FUNC lum_checkConnectStatus(U8 reset_flag)
 }
 
 
+
 void USER_FUNC lum_platformInit(void)
 {
+	U8 macaddr[6];
+#ifdef LUM_SET_AP_INFORMATION
 	struct station_config staConfig;
 	char* staSSID = "TP-LINK_47D6";
 	char* staPSWD = "13736098070";
 	//char* staSSID = "KKKK";
 	//char* staPSWD = "12340000";
-	U8 macaddr[6];
 
 
 	lumDebug("\nSW_Version=%s HW_Version= %s\n",SW_VERSION, HW_VERSION);
@@ -63,7 +65,7 @@ void USER_FUNC lum_platformInit(void)
 	wifi_station_set_config(&staConfig);
 	wifi_set_opmode(STATION_MODE);
 	//os_printf("staSSID=%s ssidLen=%d staPSWD=%s pswdLen=%d\n", staConfig.ssid, strlen(staConfig.ssid), staConfig.password, strlen(staConfig.password));
-
+#endif
 	lum_getDeviceMac(macaddr);
 	lumDebug("mac="MACSTR"\n", MAC2STR(macaddr));
 

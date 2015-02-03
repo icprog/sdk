@@ -30,7 +30,7 @@ static struct _esp_tcp serverTcpHandle;
 
 void USER_FUNC lum_sendTcpData(U8* socketData, U8 dataLen)
 {
-	lumDebug("lum_sendTcpData  g_tcpConnStatus=%d\n", g_tcpConnStatus);
+	//lumDebug("lum_sendTcpData  g_tcpConnStatus=%d\n", g_tcpConnStatus);
 	if(g_tcpConnStatus == TCP_BALANCE_CONNECTED || g_tcpConnStatus == TCP_SERVER_CONNECTED)
 	{
 		espconn_sent(&serverConnHandle, socketData, dataLen);
@@ -40,15 +40,13 @@ void USER_FUNC lum_sendTcpData(U8* socketData, U8 dataLen)
 
 static void USER_FUNC lum_tcpRecvCallback(void *arg, char *pusrdata, unsigned short length)
 {
-	lumDebug("lum_tcpRecvCallback g_tcpConnStatus=%d length=%d\n", g_tcpConnStatus, length);
-
 	lum_sockRecvData(pusrdata, length, MSG_FROM_TCP, TCP_NULL_IP);
 }
 
 
 static void USER_FUNC lum_tcpSentCallback(void *arg)
 {
-    struct espconn *pespconn = arg;
+    //struct espconn *pespconn = arg;
 
     lumDebug("lum_tcpSentCallback\n");
 }
@@ -80,8 +78,8 @@ static void USER_FUNC lum_balanceDisconnectCallback(void *arg)
 {
 	struct espconn *pespconn = arg;
 
-	g_tcpConnStatus = TCP_NONE_CONNECT;
 	lumDebug("lum_tcpDisconnectCallback g_tcpConnStatus=%d\n", g_tcpConnStatus);
+	g_tcpConnStatus = TCP_NONE_CONNECT;
 	espconn_delete(pespconn);
 	lum_connActualServer();
 }
@@ -115,7 +113,7 @@ static void USER_FUNC lum_serverConnectCallback(void *arg)
 static void USER_FUNC lum_serverDisconnectCallback(void *arg)
 {
 	lumDebug("lum_serverDisconnectCallback g_tcpConnStatus=%d\n", g_tcpConnStatus);
-	g_tcpConnStatus = TCP_NONE_CONNECT;
+	lum_connActualServer();
 }
 
 

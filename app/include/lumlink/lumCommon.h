@@ -206,5 +206,7 @@ void lum_getServerAddr(SOCKET_ADDR* pSocketAddr);
 void USER_FUNC lum_clearServerAesKey(void);
 void USER_FUNC lum_setServerAesKey(U8* serverKey);
 U8* USER_FUNC lum_getServerAesKey(U8* serverKey);
+U8* USER_FUNC lum_showSendType(MSG_ORIGIN socketFrom, BOOL bSend);
 
 #endif
+
