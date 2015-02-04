@@ -102,7 +102,7 @@ void USER_FUNC lum_sockRecvData(S8* recvData, U16 dataLen, MSG_ORIGIN socketFrom
 			return;
 		}
 		
-		lum_showHexData(lum_showSendType(socketFrom, FALSE), pDecryptData, dataLen);
+		lum_showHexData(lum_showSendType(socketFrom, FALSE, pDecryptData[SOCKET_HEADER_LEN]), pDecryptData, dataLen);
 		messageBody = lum_createTaskMessage(pDecryptData, ipAddr, socketFrom);
 		if(messageBody == NULL)
 		{
@@ -625,6 +625,7 @@ static void USER_FUNC lum_requstTcpHeartBeat(U8* pSocketDataRecv, MSG_ORIGIN soc
 	createData.bodyData = &data;
 
 	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+	lum_setHeartBeatTimer(DEFAULT_HEARTBEAT_INTERVAL);
 }
 
 

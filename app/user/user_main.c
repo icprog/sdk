@@ -30,6 +30,7 @@ void user_init(void)
     os_printf("SDK version:%s\n", system_get_sdk_version());
 
 	lum_initIOPin();
+	lum_initSystemTime();
 	lum_globalConfigDataInit();
 	lum_platformInit();
     lum_udpSocketInit();

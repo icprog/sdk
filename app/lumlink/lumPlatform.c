@@ -15,6 +15,7 @@
 
 #include "lumlink/lumCommon.h"
 #include "lumlink/lumTcpSocket.h"
+#include "lumlink/lumTimeDate.h"
 
 
 static os_timer_t g_APConnectTimer;
@@ -40,6 +41,7 @@ static void USER_FUNC lum_checkConnectStatus(U8 reset_flag)
 		lumDebug("******IP=0x%X, status=%d\n", ipconfig.ip.addr, status);
 		//os_timer_arm(&g_APConnectTimer, 60000, 0);
 		lum_connBalanceServer();
+		lum_initNetworkTime();
 	}
 	//wifi_station_scan(struct scan_config * config,scan_done_cb_t cb)
 }
@@ -49,7 +51,6 @@ static void USER_FUNC lum_checkConnectStatus(U8 reset_flag)
 void USER_FUNC lum_platformInit(void)
 {
 	U8 macaddr[6];
-#ifdef LUM_SET_AP_INFORMATION
 	struct station_config staConfig;
 	char* staSSID = "TP-LINK_47D6";
 	char* staPSWD = "13736098070";
@@ -65,7 +66,7 @@ void USER_FUNC lum_platformInit(void)
 	wifi_station_set_config(&staConfig);
 	wifi_set_opmode(STATION_MODE);
 	//os_printf("staSSID=%s ssidLen=%d staPSWD=%s pswdLen=%d\n", staConfig.ssid, strlen(staConfig.ssid), staConfig.password, strlen(staConfig.password));
-#endif
+
 	lum_getDeviceMac(macaddr);
 	lumDebug("mac="MACSTR"\n", MAC2STR(macaddr));
 

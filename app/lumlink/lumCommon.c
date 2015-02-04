@@ -57,7 +57,7 @@ void USER_FUNC lum_showHexData(S8* header, U8* data, U8 dataLen)
 	{
 		os_sprintf(strData+os_strlen(strData), "%02X ", data[i]);
 	}
-	lumDebug("%s (%d) %s\n", header, dataLen, strData);
+	lumDebug("%s %s\n", header, strData);
 }
 
 
@@ -233,7 +233,7 @@ void USER_FUNC lum_globalConfigDataInit(void)
 {
 	os_memset(&g_deviceConfig, 0, sizeof(GLOBAL_CONFIG_DATA));
 	lum_loadConfigData();
-	if(g_deviceConfig.deviceConfigData.lumitekFlag != LUMITEK_SW_FLAG)
+	if(g_deviceConfig.deviceConfigData.lumitekFlag != LUMITEK_SW_FLAG+1)
 	{
 		//Device  first power on flag
 		os_memset(&g_deviceConfig, 0, sizeof(GLOBAL_CONFIG_DATA));
@@ -246,7 +246,7 @@ void USER_FUNC lum_globalConfigDataInit(void)
 }
 
 
-U8* USER_FUNC lum_showSendType(MSG_ORIGIN socketFrom, BOOL bSend)
+U8* USER_FUNC lum_showSendType(MSG_ORIGIN socketFrom, BOOL bSend, U8 cmd)
 {
 	static U8 showData[25];
 	U8* sendType;
@@ -278,7 +278,7 @@ U8* USER_FUNC lum_showSendType(MSG_ORIGIN socketFrom, BOOL bSend)
 	{
 		dir = "<===";
 	}
-	os_sprintf(showData, "(%04d %s)%s", curTime, sendType, dir);
+	os_sprintf(showData, "(%04d %s)¡¾0x%02X¡¿%s", curTime, sendType, cmd, dir);
 	return showData;
 }
 

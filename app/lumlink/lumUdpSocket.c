@@ -49,7 +49,7 @@ void USER_FUNC lum_udpSocketInit(void)
 {
     g_UDPespconn.type = ESPCONN_UDP;
     g_UDPespconn.proto.udp = (esp_udp *)os_zalloc(sizeof(esp_udp));
-    g_UDPespconn.proto.udp->local_port = UDP_SOCKET_PORT;
+	g_UDPespconn.proto.tcp->local_port = espconn_port();
     espconn_regist_recvcb(&g_UDPespconn, lum_udpSocketRecv);
     espconn_create(&g_UDPespconn);
 }

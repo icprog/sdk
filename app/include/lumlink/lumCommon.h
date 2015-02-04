@@ -17,7 +17,6 @@
 #define TCP_SERVER_IP		"122.227.164.112"
 
 //get UTC date info
-#define MAX_PING_DATA_COUNT	3
 #define TCP_DATE_PORT		37
 #define TCP_DATE_IP			"128.138.140.44"
 
@@ -65,6 +64,7 @@
 //Heart beat interval
 #define MAX_HEARTBEAT_INTERVAL			20
 #define MIN_HEARTBEAT_INTERVAL			10
+#define DEFAULT_HEARTBEAT_INTERVAL		20
 
 #define INVALID_SERVER_ADDR			0xFFFFFFFFU
 #define INVALID_SERVER_PORT			0xFFFF
@@ -206,7 +206,7 @@ void lum_getServerAddr(SOCKET_ADDR* pSocketAddr);
 void USER_FUNC lum_clearServerAesKey(void);
 void USER_FUNC lum_setServerAesKey(U8* serverKey);
 U8* USER_FUNC lum_getServerAesKey(U8* serverKey);
-U8* USER_FUNC lum_showSendType(MSG_ORIGIN socketFrom, BOOL bSend);
+U8* USER_FUNC lum_showSendType(MSG_ORIGIN socketFrom, BOOL bSend, U8 cmd);
 
 #endif
 

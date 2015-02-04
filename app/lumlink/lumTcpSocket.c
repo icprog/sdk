@@ -133,6 +133,7 @@ static void USER_FUNC lum_tcpSocketInit(U16 port, U32 ipAddr, BOOL bBalance)
 	serverConnHandle.state = ESPCONN_NONE;
 
 	serverConnHandle.proto.tcp->remote_port = port;
+	serverConnHandle.proto.tcp->local_port = espconn_port();
 	os_memcpy(serverConnHandle.proto.tcp->remote_ip, &ipAddr, SOCKET_IP_LEN);
 
 	if(bBalance)
