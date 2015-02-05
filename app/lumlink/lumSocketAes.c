@@ -180,7 +180,7 @@ static BOOL USER_FUNC lum_AesDecryptSocketData(U8 *inData, U8* outData, U8* aesD
 }
 
 
-BOOL USER_FUNC lum_getRecvSocketData(U8* recvData, U8* decryptData, MSG_ORIGIN socketFrom)
+BOOL USER_FUNC lum_getRecvSocketData(U8* recvData, U8* decryptData, MSG_ORIGIN socketFrom, U8* decryptLen)
 {
 	U8 openDataLen = SOCKET_OPEN_DATA_LEN;
 	SOCKET_HEADER_OPEN* pHeaderOpen;
@@ -192,6 +192,8 @@ BOOL USER_FUNC lum_getRecvSocketData(U8* recvData, U8* decryptData, MSG_ORIGIN s
 	keyType = lum_getSocketAesKeyType(socketFrom, pHeaderOpen->flag.bEncrypt);
 	os_memcpy(decryptData, recvData, openDataLen);
 	ret = lum_AesDecryptSocketData(recvData+openDataLen, decryptData+openDataLen, &pHeaderOpen->dataLen, keyType);
+
+	*decryptLen = openDataLen + pHeaderOpen->dataLen;
 	return ret;
 }
 

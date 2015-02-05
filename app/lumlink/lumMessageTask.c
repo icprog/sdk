@@ -25,6 +25,7 @@ BOOL USER_FUNC lum_sendLocalTaskMessage(U16 cmdData, U8* msgData, U8 dataLen)
 {
 	MSG_BODY* messageBody;
 	U16 msgBodyLen;
+	U8* dataBody;
 
 
 	msgBodyLen = sizeof(MSG_BODY)+1;
@@ -35,10 +36,26 @@ BOOL USER_FUNC lum_sendLocalTaskMessage(U16 cmdData, U8* msgData, U8 dataLen)
 	}
 	os_memset(messageBody, 0, msgBodyLen);
 
+	if(msgData != NULL && dataLen != 0)
+	{
+		dataBody = (U8*)lum_malloc((U32)(dataLen+1));
+		if(dataBody == NULL)
+		{
+			lum_free(messageBody);
+			return FALSE;
+		}
+		os_memset(dataBody, 0, (dataLen+1));
+		os_memcpy(dataBody, msgData, dataLen);
+	}
+	else
+	{
+		dataBody = NULL;
+	}
+
 	messageBody->cmdData = cmdData;
 	messageBody->dataLen = dataLen;
 	messageBody->msgOrigin = MSG_LOCAL_EVENT;
-	messageBody->pData = msgData;
+	messageBody->pData = dataBody;
 	messageBody->socketIp = TCP_NULL_IP;
 
 
@@ -86,6 +103,7 @@ void USER_FUNC lum_sockRecvData(S8* recvData, U16 dataLen, MSG_ORIGIN socketFrom
 		U8* pDecryptData;
 		MSG_BODY* messageBody;
 		BOOL bDecryptSuccess;
+		U8 decryptLen;
 
 
 		pDecryptData = (U8*)lum_malloc(dataLen+1);
@@ -95,14 +113,14 @@ void USER_FUNC lum_sockRecvData(S8* recvData, U16 dataLen, MSG_ORIGIN socketFrom
 			return;
 		}
 		os_memset(pDecryptData, 0, (dataLen+1));
-		bDecryptSuccess = lum_getRecvSocketData((U8*)recvData, pDecryptData, socketFrom);
+		bDecryptSuccess = lum_getRecvSocketData((U8*)recvData, pDecryptData, socketFrom, &decryptLen);
 		if(!bDecryptSuccess)
 		{
 			lum_free(pDecryptData);
 			return;
 		}
 
-		lum_showHexData(lum_showSendType(socketFrom, FALSE, pDecryptData[SOCKET_HEADER_LEN]), pDecryptData, dataLen);
+		lum_showHexData(lum_showSendType(socketFrom, FALSE, pDecryptData[SOCKET_HEADER_LEN]), pDecryptData, decryptLen);
 		messageBody = lum_createTaskMessage(pDecryptData, ipAddr, socketFrom);
 		if(messageBody == NULL)
 		{
@@ -677,6 +695,55 @@ static void USER_FUNC lum_replyEnterSmartLink(U8* pSocketDataRecv, MSG_ORIGIN so
 }
 
 
+/********************************************************************************
+Request:		| 06 | Pin |бн|
+Response:	| 06 | Pin |бн|
+
+********************************************************************************/
+static U32 USER_FUNC lum_getBroadcastAddr(void)
+{
+	U32 ipAddr;
+	struct ip_info ipconfig;
+
+
+	wifi_get_ip_info(STATION_IF, &ipconfig);
+	ipAddr = ipconfig.ip.addr | 0xFF000000;
+	return ipAddr;
+}
+
+
+static void USER_FUNC lum_replyGpioChangeEvent(U8* pSocketDataRecv)
+{
+	U8 gpioChangeData[10];
+	GPIO_STATUS* pGioStatus;
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+
+
+	os_memset(gpioChangeData, 0, sizeof(gpioChangeData));
+
+
+	//Set reback socket body
+	gpioChangeData[index] = MSG_CMD_REPORT_GPIO_CHANGE;
+	index += 1;
+
+	pGioStatus = (GPIO_STATUS*)(gpioChangeData + index);
+	pGioStatus->duty = (pSocketDataRecv[0] == 1)?0xFF:0;
+	pGioStatus->res = 0xFF;
+	index += sizeof(GPIO_STATUS);
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 0;
+	createData.bodyLen = index;
+	createData.bodyData = gpioChangeData;
+
+	//send Socket
+	lum_createSendSocket(pSocketDataRecv, &createData, MSG_FROM_UDP, lum_getBroadcastAddr());
+	lum_createSendSocket(pSocketDataRecv, &createData, MSG_FROM_TCP, TCP_NULL_IP);
+}
+
+
 static void USER_FUNC lum_messageTask(os_event_t *e)
 {
 	MSG_BODY* messageBody;
@@ -739,6 +806,10 @@ static void USER_FUNC lum_messageTask(os_event_t *e)
 
 	case MSG_CMD_ENTER_SMART_LINK:
 		lum_replyEnterSmartLink(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	case MSG_CMD_REPORT_GPIO_CHANGE:
+		lum_replyGpioChangeEvent(messageBody->pData);
 		break;
 
 	default:

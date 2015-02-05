@@ -80,9 +80,7 @@ static void USER_FUNC lum_changeLedStatus(U8 ledStatus)
 
 
 static void USER_FUNC lum_ledTimerCallback(void *arg)
-{
-	//U32 dateTime;
-	
+{	
 	if(g_ledIndex < 3)
 	{
 		g_ledIndex++;
@@ -92,7 +90,6 @@ static void USER_FUNC lum_ledTimerCallback(void *arg)
 		g_ledIndex = 1;
 	}
 	lum_changeLedStatus(g_ledIndex);
-	//dateTime = system_get_time();
 	//lumDebug("g_ledIndex=%d time=%d\n", g_ledIndex, dateTime);
 }
 
@@ -118,6 +115,7 @@ static void USER_FUNC lum_closeLedStatus(void)
 void USER_FUNC lum_setSwitchStatus(SWITCH_STATUS action)
 {
 	U8 switchLevel;
+	U8 actionStatus;
 
 
 	if(action == SWITCH_OPEN)
@@ -130,6 +128,9 @@ void USER_FUNC lum_setSwitchStatus(SWITCH_STATUS action)
 		lum_closeLedStatus();
 		g_switchStatus = SWITCH_CLOSE;
 	}
+
+	actionStatus = (action == SWITCH_OPEN)?1:0;
+	lum_sendLocalTaskMessage(MSG_CMD_REPORT_GPIO_CHANGE, &actionStatus, 1);
 }
 
 
