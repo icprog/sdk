@@ -36,9 +36,9 @@ typedef struct
 } CREATE_SOCKET_DATA;
 
 
-BOOL lum_getAesKeyData(AES_KEY_TYPE keyType, U8* keyData);
+BOOL USER_FUNC lum_getAesKeyData(AES_KEY_TYPE keyType, U8* keyData);
 AES_KEY_TYPE USER_FUNC lum_getSocketAesKeyType(MSG_ORIGIN msgOrigin, U8 bEncrypt);
-BOOL lum_getRecvSocketData(U8* recvData, U8* decryptData, MSG_ORIGIN socketFrom);
-U8* lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* socketLen, MSG_ORIGIN socketFrom);
+BOOL USER_FUNC lum_getRecvSocketData(U8* recvData, U8* decryptData, MSG_ORIGIN socketFrom);
+U8* USER_FUNC lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* socketLen, MSG_ORIGIN socketFrom);
 
 #endif

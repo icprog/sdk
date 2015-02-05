@@ -682,7 +682,7 @@ static void USER_FUNC lum_messageTask(os_event_t *e)
 	MSG_BODY* messageBody;
 
 
-	lumDebug("e->sig= 0x%X\n", e->sig);
+	//lumDebug("e->sig= 0x%X\n", e->sig);
 	messageBody = (MSG_BODY*)e->par;
 	
 	switch(e->sig)

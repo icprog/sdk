@@ -13,6 +13,7 @@
 
 #include "user_interface.h"
 #include "lumlink/lumCommon.h"
+#include "lumlink/lumTimeDate.h"
 
 
 static U16 g_malloc_count = 0;
@@ -254,8 +255,7 @@ U8* USER_FUNC lum_showSendType(MSG_ORIGIN socketFrom, BOOL bSend, U8 cmd)
 	U8* dir; 
 
 	os_memset(showData, 0, sizeof(showData));
-	curTime = system_get_time();
-	curTime /= 1000000; // us-->S
+	curTime = lum_getSystemTime();
 	
 	if(socketFrom == MSG_FROM_UDP)
 	{
@@ -278,7 +278,7 @@ U8* USER_FUNC lum_showSendType(MSG_ORIGIN socketFrom, BOOL bSend, U8 cmd)
 	{
 		dir = "<===";
 	}
-	os_sprintf(showData, "(%04d %s)¡¾0x%02X¡¿%s", curTime, sendType, cmd, dir);
+	os_sprintf(showData, "(%d %s)¡¾0x%02X¡¿%s", curTime, sendType, cmd, dir);
 	return showData;
 }
 

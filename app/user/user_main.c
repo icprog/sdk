@@ -13,9 +13,12 @@
 
 #include "user_interface.h"
 #include "driver/uart.h"
+#include "lumlink/lumCommon.h"
 #include "lumlink/lumUdpSocket.h"
 #include "lumlink/lumPlatform.h"
 #include "lumlink/lumGpio.h"
+#include "lumlink/lumTimeDate.h"
+
 
 
 /******************************************************************************

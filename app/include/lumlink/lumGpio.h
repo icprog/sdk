@@ -45,9 +45,9 @@ typedef enum
 } SWITCH_STATUS;
 
 
-void lum_initIOPin(void);
-void lum_setSwitchStatus(SWITCH_STATUS action);
-SWITCH_STATUS lum_getSwitchStatus(void);
+void USER_FUNC lum_initIOPin(void);
+void USER_FUNC lum_setSwitchStatus(SWITCH_STATUS action);
+SWITCH_STATUS USER_FUNC lum_getSwitchStatus(void);
 
 #endif
 

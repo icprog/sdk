@@ -185,23 +185,23 @@ typedef struct
 
 
 
-BOOL lum_checkRevcSocket(U8* recvData, U8 RecvLen);
-void lum_showHexData(S8* header, U8* data, U8 dataLen);
-void lum_getDeviceMac(U8* macAddr);
+BOOL USER_FUNC lum_checkRevcSocket(U8* recvData, U8 RecvLen);
+void USER_FUNC lum_showHexData(S8* header, U8* data, U8 dataLen);
+void USER_FUNC lum_getDeviceMac(U8* macAddr);
 
-U8* lum_malloc(U32 mllocSize);
-void lum_free(void* pData);
+U8* USER_FUNC lum_malloc(U32 mllocSize);
+void USER_FUNC lum_free(void* pData);
 
-void lum_globalConfigDataInit(void);
-DEVICE_NAME_DATA* lum_getDeviceName(void);
-void lum_setDeviceName(DEVICE_NAME_DATA* nameData);
+void USER_FUNC lum_globalConfigDataInit(void);
+DEVICE_NAME_DATA* USER_FUNC lum_getDeviceName(void);
+void USER_FUNC lum_setDeviceName(DEVICE_NAME_DATA* nameData);
 
-U8 lum_getDeviceLockStatus(void);
-void lum_setDeviceLockStatus(U8 lockStatus);
+U8 USER_FUNC lum_getDeviceLockStatus(void);
+void USER_FUNC lum_setDeviceLockStatus(U8 lockStatus);
 
-U16 lum_getSocketSn(BOOL needIncrease);
-void lum_setServerAddr(SOCKET_ADDR* pSocketAddr);
-void lum_getServerAddr(SOCKET_ADDR* pSocketAddr);
+U16 USER_FUNC lum_getSocketSn(BOOL needIncrease);
+void USER_FUNC lum_setServerAddr(SOCKET_ADDR* pSocketAddr);
+void USER_FUNC lum_getServerAddr(SOCKET_ADDR* pSocketAddr);
 
 void USER_FUNC lum_clearServerAesKey(void);
 void USER_FUNC lum_setServerAesKey(U8* serverKey);

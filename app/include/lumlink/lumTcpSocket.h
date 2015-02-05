@@ -10,6 +10,9 @@
 #define __LUMLINK_TCP_SOCKET_H__
 
 
+#define TCP_RECONNECT_TIMER_GAP		(5000)
+
+
 typedef enum
 {
 	TCP_NONE_CONNECT,

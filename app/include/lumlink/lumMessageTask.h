@@ -95,11 +95,11 @@ typedef struct
 } GPIO_STATUS;
 
 
-void lum_messageTaskInit(void);
-BOOL lum_sendLocalTaskMessage(U16 cmdData, U8* msgData, U8 dataLen);
-void lum_postTaskMessage(U32 cmdMessage, U32 paraPointer);
-MSG_BODY* lum_createTaskMessage(U8* socketData, U32 ipAddr, MSG_ORIGIN socketFrom);
-void lum_sockRecvData(S8* recvData, U16 dataLen, MSG_ORIGIN socketFrom, U32 ipAddr);
+void USER_FUNC lum_messageTaskInit(void);
+BOOL USER_FUNC lum_sendLocalTaskMessage(U16 cmdData, U8* msgData, U8 dataLen);
+void USER_FUNC lum_postTaskMessage(U32 cmdMessage, U32 paraPointer);
+MSG_BODY* USER_FUNC lum_createTaskMessage(U8* socketData, U32 ipAddr, MSG_ORIGIN socketFrom);
+void USER_FUNC lum_sockRecvData(S8* recvData, U16 dataLen, MSG_ORIGIN socketFrom, U32 ipAddr);
 
 #endif
 

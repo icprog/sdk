@@ -23,6 +23,7 @@
 
 
 
+static os_timer_t g_tcpReconnectTimer;
 static TCP_CONN_STATUS g_tcpConnStatus = TCP_NONE_CONNECT;
 static struct espconn serverConnHandle;
 static struct _esp_tcp serverTcpHandle;
@@ -48,15 +49,22 @@ static void USER_FUNC lum_tcpSentCallback(void *arg)
 {
     //struct espconn *pespconn = arg;
 
-    lumDebug("lum_tcpSentCallback\n");
+    //lumDebug("lum_tcpSentCallback\n");
+}
+
+static void USER_FUNC lum_balanceReconnectTimerCallback(void *arg)
+{
+	lum_connBalanceServer();
 }
 
 
 static void USER_FUNC lum_balanceReconnectCallback(void *arg, sint8 err)
 {
 	lumDebug("lum_balanceReconnectCallback err =%d g_tcpConnStatus=%d\n", err, g_tcpConnStatus);
-	lum_connBalanceServer();
 	g_tcpConnStatus = TCP_NONE_CONNECT;
+	os_timer_disarm(&g_tcpReconnectTimer);
+    os_timer_setfn(&g_tcpReconnectTimer, (os_timer_func_t *)lum_balanceReconnectTimerCallback, NULL);
+    os_timer_arm(&g_tcpReconnectTimer, TCP_RECONNECT_TIMER_GAP, 0);
 }
 
 
@@ -85,14 +93,22 @@ static void USER_FUNC lum_balanceDisconnectCallback(void *arg)
 }
 
 
+static void USER_FUNC lum_serverReconnectTimerCallback(void *arg)
+{
+	lum_connActualServer();
+}
+
+
 static void USER_FUNC lum_serverReconnectCallback(void *arg, sint8 err)
 {
     struct espconn *pespconn = (struct espconn *)arg;
 
 
 	lumDebug("lum_serverReconnectCallback g_tcpConnStatus=%d\n", g_tcpConnStatus);
-	lum_connActualServer();
 	g_tcpConnStatus = TCP_NONE_CONNECT;
+	os_timer_disarm(&g_tcpReconnectTimer);
+    os_timer_setfn(&g_tcpReconnectTimer, (os_timer_func_t *)lum_serverReconnectTimerCallback, NULL);
+    os_timer_arm(&g_tcpReconnectTimer, TCP_RECONNECT_TIMER_GAP, 0);
 }
 
 

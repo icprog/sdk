@@ -9,16 +9,18 @@
 #ifndef __LUMLINK_TIME_DATE__H__
 #define __LUMLINK_TIME_DATE__H__
 
-#define DIFF_SEC_1900_1970         		(2208988800UL)
-#define SYNC_SYSTEM_TIME_TIMER_GAP		(3600000UL)
-#define SYNC_NETWORK_TIME_TIMER_GAP		(10000)
-//#define SYNC_NETWORK_TIME_TIMER_GAP		(7200000UL)
+#define DIFF_SEC_1900_1970         			(2208988800UL)
+#define SEC_2015_01_01_00_00_00				(1420041600UL)
+#define SYNC_SYSTEM_TIME_TIMER_GAP			(3600000UL)
+#define SYNC_NETWORK_TIME_TIMER_SUCC_GAP	(7200000UL)
+#define SYNC_NETWORK_TIME_TIMER_FAILD_GAP	(10000UL)
+#define TIME_RECONNECT_TIMER_GAP			(10000)
 
 
 typedef struct
 {
 	U32 lastUTCTime;  // network UTC time
-	U32 lastSystemTime;
+	U32 lastSystemTime; //get time from system
 }TIME_DATE_INFO;
 
 

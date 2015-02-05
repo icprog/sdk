@@ -10,6 +10,6 @@
 #define __LUMLINK_PLATFORM__H__
 
 
-void lum_platformInit(void);
+void USER_FUNC lum_platformInit(void);
 
 #endif
