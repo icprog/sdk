@@ -71,7 +71,7 @@ MSG_BODY* USER_FUNC lum_createTaskMessage(U8* socketData, U32 ipAddr, MSG_ORIGIN
 	messageBody->snIndex = socketHeader->snIndex;
 	messageBody->socketIp = ipAddr;
 	return messageBody;
-	
+
 }
 
 
@@ -101,7 +101,7 @@ void USER_FUNC lum_sockRecvData(S8* recvData, U16 dataLen, MSG_ORIGIN socketFrom
 			lum_free(pDecryptData);
 			return;
 		}
-		
+
 		lum_showHexData(lum_showSendType(socketFrom, FALSE, pDecryptData[SOCKET_HEADER_LEN]), pDecryptData, dataLen);
 		messageBody = lum_createTaskMessage(pDecryptData, ipAddr, socketFrom);
 		if(messageBody == NULL)
@@ -188,9 +188,9 @@ static void USER_FUNC lum_setFoundDeviceBody(CMD_FOUND_DEVIDE_RESP* pFoundDevRes
 {
 	struct ip_info ipconfig;
 
-	
+
 	pFoundDevResp->cmdCode = MSG_CMD_FOUND_DEVICE;
-    wifi_get_ip_info(STATION_IF, &ipconfig);
+	wifi_get_ip_info(STATION_IF, &ipconfig);
 	os_memcpy(pFoundDevResp->IP, (U8*)&ipconfig.ip.addr, SOCKET_IP_LEN);
 	pFoundDevResp->keyLen = AES_KEY_LEN;
 	lum_getAesKeyData(AES_KEY_DEFAULT, pFoundDevResp->keyData);
@@ -214,7 +214,7 @@ static void USER_FUNC lum_replyFoundDevice(U8* pSocketDataRecv, MSG_ORIGIN socke
 	createData.bReback = 1;
 	createData.bodyLen = sizeof(CMD_FOUND_DEVIDE_RESP);
 	createData.bodyData = (U8*)(&foundDevResp);
-	
+
 	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
 }
 
@@ -283,7 +283,7 @@ static void USER_FUNC lum_replyGetDeviceInfo(U8* pSocketDataRecv, MSG_ORIGIN soc
 	createData.bReback = 1;
 	createData.bodyLen =index;
 	createData.bodyData = deviceNameResp;
-	
+
 	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
 
 }
@@ -325,7 +325,7 @@ static void USER_FUNC lum_rebackSetDeviceName(U8* pSocketDataRecv, MSG_ORIGIN so
 	createData.bReback = 1;
 	createData.bodyLen = index;
 	createData.bodyData = deviceNameResp;
-	
+
 	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
 }
 
@@ -346,7 +346,7 @@ static void USER_FUNC lum_replyLockDevice(U8* pSocketDataRecv, MSG_ORIGIN socket
 
 	os_memset(deviceLockResp, 0, sizeof(deviceLockResp));
 	lum_getDeviceMac(macAddr);
-	
+
 	//Lock device
 	if(os_memcmp((pSocketDataRecv + SOCKET_DATA_OFFSET), macAddr, DEVICE_MAC_LEN) == 0)
 	{
@@ -370,7 +370,7 @@ static void USER_FUNC lum_replyLockDevice(U8* pSocketDataRecv, MSG_ORIGIN socket
 	createData.bReback = 1;
 	createData.bodyLen = index;
 	createData.bodyData = deviceLockResp;
-	
+
 	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
 }
 
@@ -412,7 +412,7 @@ static void USER_FUNC lum_replySetGpioStatus(U8* pSocketDataRecv, MSG_ORIGIN soc
 	createData.bReback = 1;
 	createData.bodyLen = index;
 	createData.bodyData = gpioStatusResp;
-	
+
 	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
 }
 
@@ -455,7 +455,7 @@ void USER_FUNC lum_replyGetGpioStatus(U8* pSocketDataRecv, MSG_ORIGIN socketFrom
 	createData.bReback = 1;
 	createData.bodyLen = index;
 	createData.bodyData = gpioStatusResp;
-	
+
 	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
 }
 
@@ -529,7 +529,7 @@ static void USER_FUNC lum_replyRequstConnServer(U8* pSocketDataRecv, MSG_ORIGIN 
 
 
 	//pAesKey = pSocketDataRecv + SOCKET_HEADER_LEN + 2; //cmd+len
-	//lum_setServerAesKey(pAesKey); 
+	//lum_setServerAesKey(pAesKey);
 	//lumDebug("Keylen=%d AesKey=%s\n", pSocketDataRecv[SOCKET_DATA_OFFSET], pAesKey);
 	//收到命令立刻设置，防止多条命令同时到达，密钥错位 (设置密钥提前)
 	lum_sendLocalTaskMessage(MSG_CMD_HEART_BEAT, NULL, 0);
@@ -604,7 +604,7 @@ static void USER_FUNC lum_replyTcpHeartBeat(U8* pSocketDataRecv)
 	os_memcpy(&interval, (pSocketDataRecv + SOCKET_DATA_OFFSET), 2);
 	interval = ntohs(interval);
 	//lumDebug("TCP interval = %d\n", interval);
-	
+
 	lum_setHeartBeatTimer(interval);
 }
 
@@ -684,7 +684,7 @@ static void USER_FUNC lum_messageTask(os_event_t *e)
 
 	//lumDebug("e->sig= 0x%X\n", e->sig);
 	messageBody = (MSG_BODY*)e->par;
-	
+
 	switch(e->sig)
 	{
 	case MSG_CMD_FOUND_DEVICE:
@@ -744,7 +744,7 @@ static void USER_FUNC lum_messageTask(os_event_t *e)
 	default:
 		break;
 	}
-	
+
 	if(messageBody != NULL)
 	{
 		if(messageBody->pData != NULL)

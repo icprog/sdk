@@ -16,7 +16,6 @@
 #include "lumlink/lumTimeDate.h"
 
 
-static U16 g_malloc_count = 0;
 static GLOBAL_CONFIG_DATA g_deviceConfig;
 
 
@@ -52,11 +51,22 @@ void USER_FUNC lum_showHexData(S8* header, U8* data, U8 dataLen)
 	U8 strData[512];
 	U16 index = 0;
 
-	memset(strData, 0, sizeof(strData));
+	os_memset(strData, 0, sizeof(strData));
 
 	for(i=0; i<dataLen; i++)
 	{
-		os_sprintf(strData+os_strlen(strData), "%02X ", data[i]);
+		if(i == 10)
+		{
+			os_sprintf(strData+os_strlen(strData), "¡¾%02X ", data[i]);
+		}
+		else if(i == 11)
+		{
+			os_sprintf(strData+os_strlen(strData), "%02X¡¿ ", data[i]);
+		}
+		else
+		{
+			os_sprintf(strData+os_strlen(strData), "%02X ", data[i]);
+		}
 	}
 	lumDebug("%s %s\n", header, strData);
 }
@@ -75,8 +85,8 @@ U8* USER_FUNC lum_malloc(U32 mllocSize)
 	pData = (U8*)os_malloc(mllocSize);
 	if(pData != NULL)
 	{
-		g_malloc_count++;
-		//lumDebug("**** lum_malloc g_malloc_count=%d\n", g_malloc_count);
+		g_deviceConfig.globalData.mallocCount++;
+		//lumDebug("**** lum_malloc g_malloc_count=%d\n", g_deviceConfig.globalData.mallocCount);
 	}
 	return pData;
 }
@@ -86,8 +96,8 @@ void USER_FUNC lum_free(void* pData)
 {
 	
 	os_free(pData);
-	g_malloc_count--;
-	//lumDebug("**** lum_free g_malloc_count=%d\n", g_malloc_count);
+	g_deviceConfig.globalData.mallocCount--;
+	//lumDebug("**** lum_free g_malloc_count=%d\n", g_deviceConfig.globalData.mallocCount);
 }
 
 static void USER_FUNC lum_writeConfigData(DEVICE_CONFIG_DATA* configData)
@@ -249,13 +259,11 @@ void USER_FUNC lum_globalConfigDataInit(void)
 
 U8* USER_FUNC lum_showSendType(MSG_ORIGIN socketFrom, BOOL bSend, U8 cmd)
 {
-	static U8 showData[25];
+	static U8 showData[60];
 	U8* sendType;
-	U32 curTime;
 	U8* dir; 
 
 	os_memset(showData, 0, sizeof(showData));
-	curTime = lum_getSystemTime();
 	
 	if(socketFrom == MSG_FROM_UDP)
 	{
@@ -278,7 +286,9 @@ U8* USER_FUNC lum_showSendType(MSG_ORIGIN socketFrom, BOOL bSend, U8 cmd)
 	{
 		dir = "<===";
 	}
-	os_sprintf(showData, "(%d %s)¡¾0x%02X¡¿%s", curTime, sendType, cmd, dir);
+
+	lum_getStringTime(showData);
+	os_sprintf((showData + os_strlen(showData)), " (%s)¡¾0x%02X¡¿%s", sendType, cmd, dir);
 	return showData;
 }
 

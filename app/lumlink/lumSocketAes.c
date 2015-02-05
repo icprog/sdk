@@ -102,7 +102,7 @@ static void USER_FUNC lum_PKCS5PaddingFillData(U8* inputData, U8* dataLen, AES_K
 		return;
 	}
 	fillData = AES_BLOCKSIZE - (*dataLen%AES_BLOCKSIZE);
-	memset((inputData + *dataLen), fillData, fillData);
+	os_memset((inputData + *dataLen), fillData, fillData);
 	*dataLen += fillData;
 }
 
