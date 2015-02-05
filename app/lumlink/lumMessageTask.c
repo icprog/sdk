@@ -58,7 +58,6 @@ BOOL USER_FUNC lum_sendLocalTaskMessage(U16 cmdData, U8* msgData, U8 dataLen)
 	messageBody->pData = dataBody;
 	messageBody->socketIp = TCP_NULL_IP;
 
-
 	lum_postTaskMessage((U32)cmdData, (U32)messageBody);
 	return TRUE;
 }
@@ -157,6 +156,7 @@ static BOOL USER_FUNC lum_createSendSocket(U8* oriSocketData, CREATE_SOCKET_DATA
 	else
 	{
 		pCreateData->snIndex = lum_getSocketSn(TRUE);
+		pCreateData->snIndex = htons(pCreateData->snIndex);
 	}
 
 	sendData = lum_createSendSocketData(pCreateData, &socketLen, socketFrom);
