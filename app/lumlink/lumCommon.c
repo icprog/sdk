@@ -240,6 +240,206 @@ U8* USER_FUNC lum_getServerAesKey(U8* serverKey)
 }
 
 
+void USER_FUNC lum_setAlarmData(ALARM_DATA_INFO* alarmData, U8 index)
+{
+	if(index >= MAX_ALARM_COUNT)
+	{
+		return;
+	}
+
+	os_memcpy(&g_deviceConfig.deviceConfigData.alarmData[index], alarmData, sizeof(ALARM_DATA_INFO));
+	lum_SaveConfigData();
+
+	lumDebug("AlarmData index=%d m=%d T=%d W=%d T=%d F=%d S=%d Sun=%d active=%d startHour=%d, startMinute=%d stopHour=%d stopMinute=%d size=%d\n",
+			 index,
+	         g_deviceConfig.deviceConfigData.alarmData[index].repeatData.monday,
+	         g_deviceConfig.deviceConfigData.alarmData[index].repeatData.tuesday,
+	         g_deviceConfig.deviceConfigData.alarmData[index].repeatData.wednesday,
+	         g_deviceConfig.deviceConfigData.alarmData[index].repeatData.thursday,
+	         g_deviceConfig.deviceConfigData.alarmData[index].repeatData.firday,
+	         g_deviceConfig.deviceConfigData.alarmData[index].repeatData.saturday,
+	         g_deviceConfig.deviceConfigData.alarmData[index].repeatData.sunday,
+	         g_deviceConfig.deviceConfigData.alarmData[index].repeatData.bActive,
+	         g_deviceConfig.deviceConfigData.alarmData[index].startHour,
+	         g_deviceConfig.deviceConfigData.alarmData[index].startMinute,
+	         g_deviceConfig.deviceConfigData.alarmData[index].stopHour,
+	         g_deviceConfig.deviceConfigData.alarmData[index].stopMinute,
+	         sizeof(ALARM_DATA_INFO));
+}
+
+
+void USER_FUNC lum_deleteAlarmData(U8 index, BOOL needSave)
+{
+	if(index >= MAX_ALARM_COUNT)
+	{
+		return;
+	}
+	g_deviceConfig.deviceConfigData.alarmData[index].repeatData.bActive = (U8)EVENT_INCATIVE;
+	g_deviceConfig.deviceConfigData.alarmData[index].startHour= 0xFF;
+	g_deviceConfig.deviceConfigData.alarmData[index].startMinute= 0xFF;
+	g_deviceConfig.deviceConfigData.alarmData[index].stopHour= 0xFF;
+	g_deviceConfig.deviceConfigData.alarmData[index].stopMinute= 0xFF;
+	g_deviceConfig.deviceConfigData.alarmData[index].reserved = 0;
+
+	if(needSave)
+	{
+		lum_SaveConfigData();
+	}
+}
+
+
+
+ALARM_DATA_INFO* USER_FUNC lum_getAlarmData(U8 index)
+{
+	if(index >= MAX_ALARM_COUNT)
+	{
+		return NULL;
+	}
+	else
+	{
+		return &g_deviceConfig.deviceConfigData.alarmData[index];
+	}
+}
+
+
+static void USER_FUNC lum_initAlarmData(void)
+{
+	U8 i;
+
+
+	for(i=0; i<MAX_ALARM_COUNT; i++)
+	{
+		lum_deleteAlarmData(i, FALSE);
+	}
+}
+
+
+
+void USER_FUNC lum_deleteAbsenceData(U8 index, BOOL needSave)
+{
+	if(index >= MAX_ABSENCE_COUNT)
+	{
+		return;
+	}
+	os_memset(&g_deviceConfig.deviceConfigData.absenceData[index], 0, sizeof(ASBENCE_DATA_INFO));
+	g_deviceConfig.deviceConfigData.absenceData[index].startHour = 0xFF;
+
+	if(needSave)
+	{
+		//checkAbsenceTimerAfterChange(index);
+		lum_SaveConfigData();
+	}
+}
+
+
+static void USER_FUNC lum_initAbsenceData(void)
+{
+	U8 i;
+
+
+	os_memset(&g_deviceConfig.deviceConfigData.absenceData, 0, sizeof(ASBENCE_DATA_INFO)*MAX_ABSENCE_COUNT);
+	for(i=0; i<MAX_ABSENCE_COUNT; i++)
+	{
+		lum_deleteAbsenceData(i, FALSE);
+	}
+}
+
+
+
+void USER_FUNC lum_setAbsenceData(ASBENCE_DATA_INFO* absenceData, U8 index)
+{
+	if(index >= MAX_ABSENCE_COUNT)
+	{
+		return;
+	}
+
+	os_memcpy(&g_deviceConfig.deviceConfigData.absenceData[index], absenceData, sizeof(ASBENCE_DATA_INFO));
+	lum_SaveConfigData();
+	//checkAbsenceTimerAfterChange(index);
+
+	lumDebug("AbsenceData  index=%d m=%d T=%d W=%d T=%d F=%d S=%d Sun=%d active=%d Shour=%d, Sminute=%d Ehour=%d, Eminute=%d time=%d size=%d\n",
+			 index,
+	         g_deviceConfig.deviceConfigData.absenceData[index].repeatData.monday,
+	         g_deviceConfig.deviceConfigData.absenceData[index].repeatData.tuesday,
+	         g_deviceConfig.deviceConfigData.absenceData[index].repeatData.wednesday,
+	         g_deviceConfig.deviceConfigData.absenceData[index].repeatData.thursday,
+	         g_deviceConfig.deviceConfigData.absenceData[index].repeatData.firday,
+	         g_deviceConfig.deviceConfigData.absenceData[index].repeatData.saturday,
+	         g_deviceConfig.deviceConfigData.absenceData[index].repeatData.sunday,
+	         g_deviceConfig.deviceConfigData.absenceData[index].repeatData.bActive,
+	         g_deviceConfig.deviceConfigData.absenceData[index].startHour,
+	         g_deviceConfig.deviceConfigData.absenceData[index].startMinute,
+	         g_deviceConfig.deviceConfigData.absenceData[index].endHour,
+	         g_deviceConfig.deviceConfigData.absenceData[index].endMinute,
+	         g_deviceConfig.deviceConfigData.absenceData[index].timeData,
+	         sizeof(ASBENCE_DATA_INFO));
+}
+
+
+ASBENCE_DATA_INFO* USER_FUNC lum_getAbsenceData(U8 index)
+{
+	if(index >= MAX_ABSENCE_COUNT)
+	{
+		return NULL;
+	}
+	else
+	{
+		return &g_deviceConfig.deviceConfigData.absenceData[index];
+	}
+}
+
+
+static void USER_FUNC lum_initCountDownData(void)
+{
+	os_memset(&g_deviceConfig.deviceConfigData.countDownData, 0, sizeof(COUNTDOWN_DATA_INFO)*MAX_COUNTDOWN_COUNT);
+}
+
+
+
+void USER_FUNC lum_setCountDownData(COUNTDOWN_DATA_INFO* countDownData, U8 index)
+{
+	if(index >= MAX_COUNTDOWN_COUNT)
+	{
+		return;
+	}
+
+	os_memcpy(&g_deviceConfig.deviceConfigData.countDownData[index], countDownData, sizeof(COUNTDOWN_DATA_INFO));
+	lum_SaveConfigData();
+
+	//checkCountDownTimerAfterChange(index);
+	lumDebug("countDownData active=%d, action=%d, count=%0xX\n", countDownData->flag.bActive,
+	         countDownData->action, countDownData->count);
+}
+
+
+
+void USER_FUNC lum_deleteCountDownData(U8 index)
+{
+	if(index >= MAX_COUNTDOWN_COUNT)
+	{
+		return;
+	}
+	
+	os_memset(&g_deviceConfig.deviceConfigData.countDownData[index], 0, sizeof(COUNTDOWN_DATA_INFO));
+	//checkCountDownTimerAfterChange(index);
+	lum_SaveConfigData();
+}
+
+
+
+COUNTDOWN_DATA_INFO* USER_FUNC lum_getCountDownData(U8 index)
+{
+	if(index >= MAX_COUNTDOWN_COUNT)
+	{
+		return NULL;
+	}
+	else
+	{
+		return &g_deviceConfig.deviceConfigData.countDownData[index];
+	}
+}
+
+
 void USER_FUNC lum_globalConfigDataInit(void)
 {
 	os_memset(&g_deviceConfig, 0, sizeof(GLOBAL_CONFIG_DATA));
@@ -251,9 +451,12 @@ void USER_FUNC lum_globalConfigDataInit(void)
 		g_deviceConfig.deviceConfigData.lumitekFlag = LUMITEK_SW_FLAG;
 
 		lum_initDeviceNameData();
+		lum_initAlarmData();
+		lum_initAbsenceData();
+		lum_initCountDownData();
 
+		lum_SaveConfigData();
 	}
-	lum_SaveConfigData();
 }
 
 

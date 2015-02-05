@@ -348,6 +348,7 @@ void USER_FUNC lum_getStringTime(S8* timeData)
 	curTime = lum_getSystemTime();
 	lum_gmtime(curTime, &timeInfo);
 
-	os_sprintf(timeData, "%04d-%02d-%02d %02d:%02d:%02d <%d>", timeInfo.year, timeInfo.month+1, timeInfo.day, timeInfo.hour, timeInfo.minute, timeInfo.second, timeInfo.week);
+	os_sprintf(timeData, "%04d-%02d-%02d %02d:%02d:%02d <%d>", timeInfo.year, timeInfo.month+1,
+		timeInfo.day, timeInfo.hour, timeInfo.minute, timeInfo.second, timeInfo.week);
 }
 

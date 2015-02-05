@@ -61,6 +61,12 @@
 #define SOCKET_MAC_ADDR_OFFSET			2
 #define DEVICE_NAME_LEN					20
 
+
+#define MAX_ALARM_COUNT				32
+#define MAX_ABSENCE_COUNT			10
+#define MAX_COUNTDOWN_COUNT			1
+
+
 //Heart beat interval
 #define MAX_HEARTBEAT_INTERVAL			20
 #define MIN_HEARTBEAT_INTERVAL			10
@@ -156,11 +162,82 @@ typedef struct
 } AES_KEY_DATA;
 
 
+
+typedef enum
+{
+	EVENT_INCATIVE = 0,
+	EVENT_ACTIVE = 1
+} ACTIVE_STATUS;
+
+
+//ALARM data
+typedef struct
+{
+	U8 monday:1;
+	U8 tuesday:1;
+	U8 wednesday:1;
+	U8 thursday:1;
+	U8 firday:1;
+	U8 saturday:1;
+	U8 sunday:1;
+	U8 bActive:1;
+} ALARM_REPEAT_DATA;
+
+
+typedef struct
+{
+	ALARM_REPEAT_DATA repeatData;
+	U8 startHour;
+	U8 startMinute;
+	U8 stopHour;
+	U8 stopMinute;
+	U8 reserved;
+} ALARM_DATA_INFO;
+
+
+
+typedef struct
+{
+	ALARM_REPEAT_DATA repeatData;
+	U8 startHour;
+	U8 startMinute;
+	U8 endHour;
+	U8 endMinute;
+	U8 timeData;
+} ASBENCE_DATA_INFO;
+
+
+typedef struct
+{
+	U8 reserved0:1;
+	U8 reserved1:1;
+	U8 reserved2:1;
+	U8 reserved3:1;
+	U8 reserved4:1;
+	U8 reserved5:1;
+	U8 reserved6:1;
+	U8 bActive:1;
+} COUNTDOWN_FLAG;
+
+
+
+typedef struct
+{
+	COUNTDOWN_FLAG flag;
+	U8		action;
+	U32		count;
+} COUNTDOWN_DATA_INFO;
+
+
+
 typedef struct
 {
 	U8	bLocked;	//used for check device be locked
 	U8	swVersion;	//Used for upgrade check
 	DEVICE_NAME_DATA deviceName;
+	ALARM_DATA_INFO alarmData[MAX_ALARM_COUNT];
+	ASBENCE_DATA_INFO absenceData[MAX_ABSENCE_COUNT];
+	COUNTDOWN_DATA_INFO countDownData[MAX_COUNTDOWN_COUNT];
 	U16 lumitekFlag;
 } DEVICE_CONFIG_DATA;
 
