@@ -74,7 +74,6 @@ static void USER_FUNC lum_timeRecvCallback(void *arg, char *pusrdata, unsigned s
 	tmp = (U32*)pusrdata;
 	curUTC = ntohl(tmp[0]);
 	lum_syncNetworkTime(curUTC);
-	lum_timeSocketProtect(lum_disconnectTimerCallback); //收到数据10秒，如没有断开则强制断开
 	g_getUTCSucc = TRUE;
 }
 
