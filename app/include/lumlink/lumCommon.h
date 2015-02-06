@@ -285,5 +285,20 @@ void USER_FUNC lum_setServerAesKey(U8* serverKey);
 U8* USER_FUNC lum_getServerAesKey(U8* serverKey);
 U8* USER_FUNC lum_showSendType(MSG_ORIGIN socketFrom, BOOL bSend, U8 cmd);
 
+//Alarm
+void USER_FUNC lum_setAlarmData(ALARM_DATA_INFO* alarmData, U8 index);
+void USER_FUNC lum_deleteAlarmData(U8 index, BOOL needSave);
+ALARM_DATA_INFO* USER_FUNC lum_getAlarmData(U8 index);
+
+//Absence
+void USER_FUNC lum_setAbsenceData(ASBENCE_DATA_INFO* absenceData, U8 index);
+void USER_FUNC lum_deleteAbsenceData(U8 index, BOOL needSave);
+ASBENCE_DATA_INFO* USER_FUNC lum_getAbsenceData(U8 index);
+
+//CountDown
+void USER_FUNC lum_setCountDownData(COUNTDOWN_DATA_INFO* countDownData, U8 index);
+void USER_FUNC lum_deleteCountDownData(U8 index);
+COUNTDOWN_DATA_INFO* USER_FUNC lum_getCountDownData(U8 index);
+
 #endif
 

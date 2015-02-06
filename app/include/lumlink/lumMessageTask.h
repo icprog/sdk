@@ -34,7 +34,7 @@ typedef enum
 	MSG_CMD_GET_ABSENCE_DATA			= 0x0A,
 	MSG_CMD_DELETE_ABSENCE_DATA			= 0x0B,
 	//stop watch
-	MSG_CMD_SET_COUNDDOWN_DATA			= 0x0C,
+	MSG_CMD_SET_COUNTDOWN_DATA			= 0x0C,
 	MSG_CMD_GET_COUNTDOWN_DATA			= 0x0D,
 	MSG_CMD_DELETE_COUNTDOWN_DATA		= 0x0E,
 
@@ -93,6 +93,15 @@ typedef struct
 	U8 duty;   //输出高电平为0xFF，低电平为0x00
 	U8 res;  //保留字节，固定为0xFF
 } GPIO_STATUS;
+
+//Command 0x03 ==> Set alarm
+typedef struct
+{
+	U8 cmdCode;
+	U8 pinNum;
+	U8 index;
+	ALARM_DATA_INFO alarmInfo;
+} ALRAM_DATA;
 
 
 void USER_FUNC lum_messageTaskInit(void);

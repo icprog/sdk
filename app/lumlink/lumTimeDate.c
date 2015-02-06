@@ -105,23 +105,6 @@ static void USER_FUNC lum_reconnectTimerCallback(void *arg)
 }
 
 
-static void USER_FUNC lum_timeReconnectCallback(void *arg, sint8 err)
-{
-	//struct espconn *pespconn = (struct espconn *)arg;
-
-
-	lumDebug("lum_timeReconnectCallback err=%d\n", err);
-	if(g_getUTCSucc)
-	{
-		espconn_disconnect(&timeConnHandle);
-	}
-	else
-	{
-		lum_timeSocketProtect(lum_reconnectTimerCallback);
-	}
-}
-
-
 static void USER_FUNC lum_timeDisconnectCallback(void *arg)
 {
 	struct espconn *pespconn = arg;
@@ -130,6 +113,23 @@ static void USER_FUNC lum_timeDisconnectCallback(void *arg)
 	lumDebug("lum_timeDisconnectCallback \n");
 	os_timer_disarm(&g_getTimeTimer); //如已经断开，取消保护
 	espconn_delete(pespconn);
+}
+
+
+static void USER_FUNC lum_timeReconnectCallback(void *arg, sint8 err)
+{
+	struct espconn *pespconn = (struct espconn *)arg;
+
+
+	lumDebug("lum_timeReconnectCallback err=%d\n", err);
+	if(g_getUTCSucc)
+	{
+		lum_timeDisconnectCallback(pespconn);
+	}
+	else
+	{
+		lum_timeSocketProtect(lum_reconnectTimerCallback);
+	}
 }
 
 

@@ -48,7 +48,7 @@ BOOL USER_FUNC lum_checkRevcSocket(U8* recvData, U8 RecvLen)
 void USER_FUNC lum_showHexData(S8* header, U8* data, U8 dataLen)
 {
 	U16 i;
-	U8 strData[512];
+	U8 strData[1024];
 	U16 index = 0;
 
 	os_memset(strData, 0, sizeof(strData));

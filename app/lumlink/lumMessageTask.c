@@ -19,6 +19,8 @@
 
 
 static os_event_t g_messageTaskQueue[MESSAGE_TASK_QUEUE_LEN];
+static os_timer_t g_heartBeatTimer;
+
 
 
 BOOL USER_FUNC lum_sendLocalTaskMessage(U16 cmdData, U8* msgData, U8 dataLen)
@@ -591,9 +593,6 @@ static void USER_FUNC lum_replyUdpHeartBeat(U8* pSocketDataRecv, MSG_ORIGIN sock
 }
 
 
-
-static os_timer_t g_heartBeatTimer;
-
 static void USER_FUNC lum_heartBeatTimerCallback(void *arg)
 {
 	lum_sendLocalTaskMessage(MSG_CMD_HEART_BEAT, NULL, 0);
@@ -744,6 +743,454 @@ static void USER_FUNC lum_replyGpioChangeEvent(U8* pSocketDataRecv)
 }
 
 
+
+/********************************************************************************
+Request:		| 03 |Pin_Num|Num|Flag|Start_Hour|Start_Min|Stop_Hour|Stop_min|Reserve|
+Response:	| 03 |Result|
+
+
+********************************************************************************/
+static void USER_FUNC lum_replySetAlarmData(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	ALRAM_DATA* pAlarmData;
+	U8 SetAlarmResp[10];
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+
+
+	os_memset(SetAlarmResp, 0, sizeof(SetAlarmResp));
+
+	//Save alarm data
+	pAlarmData = (ALRAM_DATA*)(pSocketDataRecv + SOCKET_HEADER_LEN);
+	lum_setAlarmData(&pAlarmData->alarmInfo, (pAlarmData->index - 1)); //pAlarmData->index from 1 to 32
+
+	//Set reback socket body
+	SetAlarmResp[index] = MSG_CMD_SET_ALARM_DATA;
+	index += 1;
+	SetAlarmResp[index] = REBACK_SUCCESS_MESSAGE;
+	index += 1;
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen = index;
+	createData.bodyData = SetAlarmResp;
+
+	//send Socket
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+}
+
+
+
+
+/********************************************************************************
+Request: |04|Pin_Num|Num| ... |
+Response:|04|Pin_Num|Num|Flag|Start_Hour|Start_Min|Stop_Hour|Stop_Min|Reserve|... |
+
+
+********************************************************************************/
+static U8 USER_FUNC lum_fillAlarmRebackData(U8* pdata, U8 alarmIndex)
+{
+	ALARM_DATA_INFO* pAlarmInfo;
+	U8 index = 0;
+
+
+	pAlarmInfo = lum_getAlarmData(alarmIndex - 1);
+	if(pAlarmInfo == NULL)
+	{
+		return 0;
+	}
+	pdata[index] = alarmIndex; //num
+	index += 1;
+	os_memcpy((pdata+index), pAlarmInfo, sizeof(ALARM_DATA_INFO)); //flag
+	index += sizeof(ALARM_DATA_INFO);
+	return index;
+}
+
+
+
+static void USER_FUNC lum_replyGetAlarmData(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	U8 alarmIndex;
+	U8 GetAlarmResp[250];  //(4+4)*MAX_ALARM_COUNT + 2+1
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+	U8 i;
+
+
+	os_memset(GetAlarmResp, 0, sizeof(GetAlarmResp));
+
+	//Get data
+	alarmIndex = pSocketDataRecv[SOCKET_HEADER_LEN + 2];
+
+	//Set reback socket body
+	GetAlarmResp[index] = MSG_CMD_GET_ALARM_DATA;
+	index += 1;
+	GetAlarmResp[index] = 0x0;
+	index += 1;
+	if(alarmIndex == 0)
+	{
+		for(i=1; i<=MAX_ALARM_COUNT; i++) // form 1 to MAX_ALARM_COUNT
+		{
+			index += lum_fillAlarmRebackData((GetAlarmResp + index), i);
+		}
+	}
+	else
+	{
+		index += lum_fillAlarmRebackData((GetAlarmResp + index), alarmIndex);
+	}
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen = index;
+	createData.bodyData = GetAlarmResp;
+	
+	//send Socket
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+}
+
+
+
+
+/********************************************************************************
+Request:		| 05 | Pin_num|Num |
+Response:	| 05 | Result |
+
+********************************************************************************/
+static void USER_FUNC lum_replyDeleteAlarmData(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	U8 alarmIndex;
+	U8 DeleteAlarmResp[10];
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+
+
+	os_memset(DeleteAlarmResp, 0, sizeof(DeleteAlarmResp));
+
+	alarmIndex = pSocketDataRecv[SOCKET_HEADER_LEN + 2];
+	lum_deleteAlarmData((alarmIndex - 1), TRUE);
+
+	//Set reback socket body
+	DeleteAlarmResp[index] = MSG_CMD_DELETE_ALARM_DATA;
+	index += 1;
+	DeleteAlarmResp[index] = REBACK_SUCCESS_MESSAGE;
+	index += 1;
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen = index;
+	createData.bodyData = DeleteAlarmResp;
+
+	//send Socket
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+
+}
+
+
+
+/********************************************************************************
+Request:		|09|Num|Flag|Start_hour| Start_min | Stop_hour |Stop_min|Time|
+Response:	|09| Result |
+
+********************************************************************************/
+static void USER_FUNC lum_replySetAbsenceData(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	ASBENCE_DATA_INFO* pAbsenceInfo;
+	U8 absenceIndex;
+	U8 SetAbsenceResp[10];
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+
+
+	os_memset(SetAbsenceResp, 0, sizeof(SetAbsenceResp));
+
+	//Save absence data
+	absenceIndex = pSocketDataRecv[SOCKET_DATA_OFFSET];
+	pAbsenceInfo = (ASBENCE_DATA_INFO*)(pSocketDataRecv + SOCKET_HEADER_LEN + 2);
+	lum_setAbsenceData(pAbsenceInfo, absenceIndex - 1);
+
+	//Set reback socket body
+	SetAbsenceResp[index] = MSG_CMD_SET_ABSENCE_DATA;
+	index += 1;
+	SetAbsenceResp[index] = REBACK_SUCCESS_MESSAGE;
+	index += 1;
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen = index;
+	createData.bodyData = SetAbsenceResp;
+
+	//send Socket
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+}
+
+
+
+
+/********************************************************************************
+Request:		|0A |Num|
+Response:	|0A|Num|Flag|Start_hour|Start_min| Stop_hour |Stop_min|Time|бн|
+
+********************************************************************************/
+static void USER_FUNC lum_replyGetAbsenceData(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	U8 absenceIndex;
+	ASBENCE_DATA_INFO* pAbsenceInfo;
+	U8 GetAbsenceResp[100];  //(8)*MAX_ABSENCE_COUNT + 2+1
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+	U8 i;
+
+
+	os_memset(GetAbsenceResp, 0, sizeof(GetAbsenceResp));
+	absenceIndex = pSocketDataRecv[SOCKET_DATA_OFFSET];
+
+	//Set reback socket body
+	GetAbsenceResp[index] = MSG_CMD_GET_ABSENCE_DATA;
+	index = 1;
+
+	if(absenceIndex == 0)
+	{
+		for(i=1; i<=MAX_ABSENCE_COUNT; i++)
+		{
+			pAbsenceInfo = lum_getAbsenceData(i - 1);
+			//if(pAbsenceInfo->startHour == 0xFF)
+			//{
+			//	continue;
+			//}
+			GetAbsenceResp[index] = i; //Num
+			index += 1;
+
+			os_memcpy((GetAbsenceResp + index), pAbsenceInfo, sizeof(ASBENCE_DATA_INFO));
+			index += sizeof(ASBENCE_DATA_INFO);
+		}
+	}
+	else
+	{
+		pAbsenceInfo = lum_getAbsenceData(absenceIndex - 1);
+		GetAbsenceResp[index] = absenceIndex; //Num
+		index += 1;
+
+		os_memcpy((GetAbsenceResp + index), pAbsenceInfo, sizeof(ASBENCE_DATA_INFO));
+		index += sizeof(ASBENCE_DATA_INFO);
+	}
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen = index;
+	createData.bodyData = GetAbsenceResp;
+
+	//send Socket
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+}
+
+
+
+/********************************************************************************
+Request:		| 0B |Num|
+Response:	|0B|Result|
+
+********************************************************************************/
+static void USER_FUNC lum_replyDeleteAbsenceData(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	U8 absenceIndex;
+	U8 DeleteAbsenceResp[10];
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+
+
+	os_memset(DeleteAbsenceResp, 0, sizeof(DeleteAbsenceResp));
+
+	absenceIndex = pSocketDataRecv[SOCKET_DATA_OFFSET];
+	lum_deleteAbsenceData((absenceIndex - 1), TRUE);
+
+	//Set reback socket body
+	DeleteAbsenceResp[index] = MSG_CMD_DELETE_ABSENCE_DATA;
+	index += 1;
+	DeleteAbsenceResp[index] = REBACK_SUCCESS_MESSAGE;
+	index += 1;
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen = index;
+	createData.bodyData = DeleteAbsenceResp;
+
+	//send Socket
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+}
+
+
+
+/********************************************************************************
+Request:		|0C|Num|Flag|Stop_time|Pin|
+Response:	|0C|Result|
+
+********************************************************************************/
+static void USER_FUNC lum_replySetCountDownData(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	COUNTDOWN_DATA_INFO countDownData;
+	U8 countDownIndex;
+	GPIO_STATUS* pGpioStatus;
+	U8* pData;
+	U32 count;
+	U8 SetcountDownResp[10];
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+
+
+	os_memset(SetcountDownResp, 0, sizeof(SetcountDownResp));
+
+	//Save countDown data
+	pData = pSocketDataRecv + SOCKET_DATA_OFFSET;
+	countDownIndex = pData[0];
+	os_memcpy(&countDownData.flag, (pData + 1), sizeof(COUNTDOWN_FLAG));
+	os_memcpy(&count, (pData + 2), sizeof(U32));
+	countDownData.count = ntohl(count);
+	pGpioStatus = (GPIO_STATUS*)(pData + 6);
+	countDownData.action = (pGpioStatus->duty == 0xFF)?SWITCH_OPEN:SWITCH_CLOSE;
+	lum_setCountDownData(&countDownData, (countDownIndex - 1));
+
+	//Set reback socket body
+	SetcountDownResp[index] = MSG_CMD_SET_COUNTDOWN_DATA;
+	index += 1;
+	SetcountDownResp[index] = REBACK_SUCCESS_MESSAGE;
+	index += 1;
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen = index;
+	createData.bodyData = SetcountDownResp;
+
+	//send Socket
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+}
+
+
+
+
+/********************************************************************************
+Request:		|0D|Num|
+Response:	|0D|Num|Flag|Stop_time|Pin|бн|
+
+********************************************************************************/
+static U8 USER_FUNC fillCountDownRebackData(U8* pdata, U8 countDownIndex)
+{
+
+	COUNTDOWN_DATA_INFO* pCountDownData;
+	GPIO_STATUS gpioStatus;
+	U16 index = 0;
+	U32 countNum;
+
+
+	pCountDownData = lum_getCountDownData(countDownIndex);
+	if(pCountDownData == NULL)
+	{
+		return index;
+	}
+	pdata[index] = countDownIndex + 1; //set Num
+	index += 1;
+
+	os_memcpy((pdata + index), &pCountDownData->flag, sizeof(COUNTDOWN_FLAG)); //set Flag
+	index += sizeof(COUNTDOWN_FLAG);
+
+	countNum = htonl(pCountDownData->count); // Set stop time
+	os_memcpy((pdata + index), &countNum, sizeof(U32));
+	index += sizeof(U32);
+
+	os_memset(&gpioStatus, 0, sizeof(GPIO_STATUS));
+	gpioStatus.duty = (pCountDownData->action == SWITCH_OPEN)?0xFF:0;
+	gpioStatus.res = 0xFF;
+	os_memcpy((pdata + index), &gpioStatus, sizeof(GPIO_STATUS)); //pin
+	index += sizeof(GPIO_STATUS);
+
+	return index;
+}
+
+
+
+static void USER_FUNC lum_replyGetCountDownData(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	U8 countDownIndex;
+	U8 GetCountDownResp[20];
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+	U8 i;
+
+
+	os_memset(GetCountDownResp, 0, sizeof(GetCountDownResp));
+
+	//Get data
+	countDownIndex = pSocketDataRecv[SOCKET_DATA_OFFSET];
+
+	//Set reback socket body
+	GetCountDownResp[index] = MSG_CMD_GET_COUNTDOWN_DATA; //set CMD
+	index += 1;
+	if(countDownIndex == 0)
+	{
+		for (i=0; i<MAX_COUNTDOWN_COUNT; i++)
+		{
+			index += fillCountDownRebackData((GetCountDownResp + index), i);
+		}
+	}
+	else
+	{
+		index += fillCountDownRebackData((GetCountDownResp + index), (countDownIndex - 1));
+	}
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen = index;
+	createData.bodyData = GetCountDownResp;
+
+	//send Socket
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+}
+
+
+
+
+/********************************************************************************
+Request:		|0E|Num|
+Response:	|0E|Result||
+
+********************************************************************************/
+static void USER_FUNC lum_replyDeleteCountDownData(U8* pSocketDataRecv, MSG_ORIGIN socketFrom, U32 ipAddr)
+{
+	U8 countDownIndex;
+	U8 DeleteCountDownResp[10];
+	CREATE_SOCKET_DATA createData;
+	U16 index = 0;
+
+
+	os_memset(DeleteCountDownResp, 0, sizeof(DeleteCountDownResp));
+
+	countDownIndex = pSocketDataRecv[SOCKET_DATA_OFFSET];
+	lum_deleteCountDownData(countDownIndex -1);
+
+	//Set reback socket body
+	DeleteCountDownResp[index] = MSG_CMD_DELETE_COUNTDOWN_DATA;
+	index += 1;
+	DeleteCountDownResp[index] = REBACK_SUCCESS_MESSAGE;
+	index += 1;
+
+	//fill socket data
+	createData.bEncrypt = 1;
+	createData.bReback = 1;
+	createData.bodyLen = index;
+	createData.bodyData = DeleteCountDownResp;
+
+	//send Socket
+	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
+}
+
+
 static void USER_FUNC lum_messageTask(os_event_t *e)
 {
 	MSG_BODY* messageBody;
@@ -810,6 +1257,45 @@ static void USER_FUNC lum_messageTask(os_event_t *e)
 
 	case MSG_CMD_REPORT_GPIO_CHANGE:
 		lum_replyGpioChangeEvent(messageBody->pData);
+		break;
+
+	//Alarm
+	case MSG_CMD_SET_ALARM_DATA:
+		lum_replySetAlarmData(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	case MSG_CMD_GET_ALARM_DATA:
+		lum_replyGetAlarmData(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	case MSG_CMD_DELETE_ALARM_DATA:
+		lum_replyDeleteAlarmData(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	//Absence
+	case MSG_CMD_SET_ABSENCE_DATA:
+		lum_replySetAbsenceData(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	case MSG_CMD_GET_ABSENCE_DATA:
+		lum_replyGetAbsenceData(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	case MSG_CMD_DELETE_ABSENCE_DATA:
+		lum_replyDeleteAbsenceData(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	//CountDown
+	case MSG_CMD_SET_COUNTDOWN_DATA:
+		lum_replySetCountDownData(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	case MSG_CMD_GET_COUNTDOWN_DATA:
+		lum_replyGetCountDownData(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
+		break;
+
+	case MSG_CMD_DELETE_COUNTDOWN_DATA:
+		lum_replyDeleteCountDownData(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
 		break;
 
 	default:
