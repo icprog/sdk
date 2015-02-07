@@ -490,7 +490,7 @@ U8* USER_FUNC lum_showSendType(MSG_ORIGIN socketFrom, BOOL bSend, U8 cmd)
 		dir = "<===";
 	}
 
-	lum_getStringTime(showData);
+	lum_getStringTime(showData, FALSE, TRUE);
 	os_sprintf((showData + os_strlen(showData)), " (%s)¡¾0x%02X¡¿%s", sendType, cmd, dir);
 	return showData;
 }

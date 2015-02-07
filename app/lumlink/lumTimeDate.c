@@ -303,7 +303,7 @@ void USER_FUNC lum_getGmtime(TIME_DATA_INFO* timeInfo)
 }
 
 
-void USER_FUNC lum_getStringTime(S8* timeData)
+void USER_FUNC lum_getStringTime(S8* timeData, BOOL needDay, BOOL chinaDate)
 {
 	U32 curTime;
 	TIME_DATA_INFO timeInfo;
@@ -312,7 +312,19 @@ void USER_FUNC lum_getStringTime(S8* timeData)
 	curTime = lum_getSystemTime();
 	lum_gmtime(curTime, &timeInfo);
 
-	os_sprintf(timeData, "%04d-%02d-%02d %02d:%02d:%02d <%d>", timeInfo.year, timeInfo.month+1,
-		timeInfo.day, timeInfo.hour, timeInfo.minute, timeInfo.second, timeInfo.week);
+	if(chinaDate)
+	{
+		timeInfo.hour = (timeInfo.hour + 8)%24;
+	}
+
+	if(needDay)
+	{
+		os_sprintf(timeData, "%04d-%02d-%02d %02d:%02d:%02d <%d>", timeInfo.year, timeInfo.month+1,
+			timeInfo.day, timeInfo.hour, timeInfo.minute, timeInfo.second, timeInfo.week);
+	}
+	else
+	{
+		os_sprintf(timeData, "%02d:%02d:%02d", timeInfo.hour, timeInfo.minute, timeInfo.second);
+	}
 }
 

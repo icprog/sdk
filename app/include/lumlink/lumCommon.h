@@ -45,10 +45,6 @@
 //sw flag
 #define LUMITEK_SW_FLAG					0xDCBA
 
-//Heart beat interval
-#define MAX_HEARTBEAT_INTERVAL			20
-#define MIN_HEARTBEAT_INTERVAL			10
-
 
 //other data define define
 #define SOCKEY_MAX_DATA_LEN				256
@@ -68,9 +64,9 @@
 
 
 //Heart beat interval
-#define MAX_HEARTBEAT_INTERVAL			20
-#define MIN_HEARTBEAT_INTERVAL			10
-#define DEFAULT_HEARTBEAT_INTERVAL		20
+#define MAX_HEARTBEAT_INTERVAL				20
+#define MIN_HEARTBEAT_INTERVAL				10
+#define DEFAULT_TCP_HEARTBEAT_INTERVAL		20
 
 #define INVALID_SERVER_ADDR			0xFFFFFFFFU
 #define INVALID_SERVER_PORT			0xFFFF

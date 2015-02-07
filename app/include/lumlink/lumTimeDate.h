@@ -38,7 +38,7 @@ typedef struct
 void USER_FUNC lum_initSystemTime(void);
 void USER_FUNC lum_initNetworkTime(void);
 void USER_FUNC lum_getGmtime(TIME_DATA_INFO* timeInfo);
-void USER_FUNC lum_getStringTime(S8* timeData);
+void USER_FUNC lum_getStringTime(S8* timeData, BOOL needDay, BOOL chinaDate);
 
 
 #endif

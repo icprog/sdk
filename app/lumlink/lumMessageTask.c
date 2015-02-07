@@ -642,7 +642,7 @@ static void USER_FUNC lum_requstTcpHeartBeat(U8* pSocketDataRecv, MSG_ORIGIN soc
 	createData.bodyData = &data;
 
 	lum_createSendSocket(pSocketDataRecv, &createData, socketFrom, ipAddr);
-	lum_setHeartBeatTimer(DEFAULT_HEARTBEAT_INTERVAL);
+	lum_setHeartBeatTimer(DEFAULT_TCP_HEARTBEAT_INTERVAL);
 }
 
 
