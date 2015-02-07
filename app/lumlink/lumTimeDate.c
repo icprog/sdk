@@ -20,7 +20,6 @@
 
 
 static TIME_DATE_INFO g_timeDateInfo;
-static os_timer_t g_systemTimeTimer;
 static os_timer_t g_networkTimeTimer;
 
 static BOOL g_getUTCSucc;
@@ -122,42 +121,6 @@ static void USER_FUNC lum_getNetworkTime(void)
 }
 
 
-static void USER_FUNC lum_syncSystemTime(void)
-{
-	U32 curTimeUs;
-	U32 curTimeSecond;
-
-
-	curTimeUs = system_get_time();
-	if(curTimeUs < g_timeDateInfo.lastSystemTime)
-	{
-		curTimeUs = 0xFFFFFFFF - g_timeDateInfo.lastSystemTime + curTimeUs;
-	}
-	else
-	{
-		curTimeUs = curTimeUs - g_timeDateInfo.lastSystemTime;
-	}
-
-	curTimeSecond = curTimeUs/1000000;  //us-->S
-	g_timeDateInfo.lastUTCTime += curTimeSecond;
-	g_timeDateInfo.lastSystemTime = curTimeUs;
-}
-
-
-static void USER_FUNC lum_syncSystemTimerCallback(void *arg)
-{
-	lum_syncSystemTime();
-}
-
-
-static void USER_FUNC lum_syncSystemTimer(void)
-{
-	os_timer_disarm(&g_systemTimeTimer);
-	os_timer_setfn(&g_systemTimeTimer, (os_timer_func_t *)lum_syncSystemTimerCallback, NULL);
-	os_timer_arm(&g_systemTimeTimer, SYNC_SYSTEM_TIME_TIMER_GAP, 1);
-}
-
-
 static void USER_FUNC lum_syncNetworkTimerCallback(void *arg)
 {
 	lum_getNetworkTime();
@@ -209,9 +172,8 @@ static void USER_FUNC lum_syncNetworkTimer(BOOL protectCallBack, U32 timeGap)
 //init system time immediatly after power
 void USER_FUNC lum_initSystemTime(void)
 {
-	g_timeDateInfo.lastSystemTime = 0;
+	g_timeDateInfo.lastSystemTime = system_get_time();
 	g_timeDateInfo.lastUTCTime = SEC_2015_01_01_00_00_00;
-	lum_syncSystemTimer();
 }
 
 
@@ -225,20 +187,26 @@ void USER_FUNC lum_initNetworkTime(void)
 static U32 USER_FUNC lum_getSystemTime(void)
 {
 	U32 curTimeUs;
-	U32 curTimeSecond;
+	U32 totalSecond;
+	U32 totalUs;
 
 
 	curTimeUs = system_get_time();
 	if(curTimeUs < g_timeDateInfo.lastSystemTime)
 	{
-		curTimeUs = 0xFFFFFFFF - g_timeDateInfo.lastSystemTime + curTimeUs;
+		totalUs = 0xFFFFFFFF - g_timeDateInfo.lastSystemTime + curTimeUs;
+		totalSecond = totalUs/1000000;  //us-->S
+		g_timeDateInfo.lastUTCTime += totalSecond;
+
+		g_timeDateInfo.lastSystemTime = curTimeUs;
+		return g_timeDateInfo.lastUTCTime;
 	}
 	else
 	{
-		curTimeUs = curTimeUs - g_timeDateInfo.lastSystemTime;
+		totalUs = curTimeUs - g_timeDateInfo.lastSystemTime;
+		totalSecond = totalUs/1000000;  //us-->S
+		return g_timeDateInfo.lastUTCTime + totalSecond;
 	}
-	curTimeSecond = curTimeUs/1000000;  //us-->S
-	return g_timeDateInfo.lastUTCTime + curTimeSecond;
 }
 
 
