@@ -246,7 +246,7 @@ static U8 USER_FUNC lum_getDayOfWeek(U8 month, U8 day, U16 year)
 }
 
 
-static void USER_FUNC lum_gmtime(U32 second, TIME_DATA_INFO* timeInfo)
+void USER_FUNC lum_gmtime(U32 second, TIME_DATA_INFO* timeInfo)
 {
 	U32 tmpSecond;
 	U8 bLeepYear;

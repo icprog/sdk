@@ -39,6 +39,7 @@ void USER_FUNC lum_initSystemTime(void);
 void USER_FUNC lum_initNetworkTime(void);
 void USER_FUNC lum_getGmtime(TIME_DATA_INFO* timeInfo);
 void USER_FUNC lum_getStringTime(S8* timeData, BOOL needDay, BOOL chinaDate);
+void USER_FUNC lum_gmtime(U32 second, TIME_DATA_INFO* timeInfo);
 
 
 #endif

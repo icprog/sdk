@@ -21,6 +21,7 @@
 #include "lumlink/lumTimer.h"
 
 
+static BOOL g_absenceRunning = FALSE;
 
 static BOOL USER_FUNC lum_compareWeekData(U8 compareWeek, U8 curWeek)
 {
@@ -44,7 +45,7 @@ static BOOL USER_FUNC lum_compareWeekData(U8 compareWeek, U8 curWeek)
 
 static BOOL USER_FUNC lum_bAbsenceRunNow(void)
 {
-	return FALSE;
+	return g_absenceRunning;
 }
 
 
@@ -103,4 +104,110 @@ static void USER_FUNC lum_compareAlarm(U8 index, TIME_DATA_INFO* pCurTime)
 		}
 	}
 }
+
+
+static ABSENXE_CHECK_STATUS USER_FUNC lum_compareAbsence(U8 index, TIME_DATA_INFO* pCurTime)
+{
+	U16 endMinute;
+	U16 startMunite;
+	U16 curMinute;
+	U8 compareWeek;
+	ASBENCE_DATA_INFO* pAbenceInfo;
+	BOOL withinPeriod = FALSE;
+	ABSENXE_CHECK_STATUS checkStatus = OUTOF_ABSENCE;;
+
+
+	pAbenceInfo =  lum_getAbsenceData(index);
+	if(pAbenceInfo->repeatData.bActive == EVENT_INCATIVE)
+	{
+		return checkStatus;
+	}
+
+	os_memcpy(&compareWeek, &pAbenceInfo->repeatData, 0);
+	startMunite = pAbenceInfo->startHour*60 + pAbenceInfo->startMinute;
+	endMinute = pAbenceInfo->endHour*60 + pAbenceInfo->endMinute;
+	curMinute = pCurTime->hour*60 + pCurTime->minute;
+
+
+	if(curMinute >= startMunite) //today
+	{
+		if(lum_compareWeekData(compareWeek, pCurTime->week))
+		{
+			if(curMinute <= endMinute || startMunite >= endMinute)
+			{
+				withinPeriod = TRUE;
+			}
+		}
+	}
+	else if(startMunite >= endMinute)//next day
+	{
+		compareWeek = ((compareWeek&0x40)>>6) | ((compareWeek&0x3F)<<1) | (compareWeek&0x80); //week add 1
+		if(lum_compareWeekData(compareWeek, pCurTime->week))
+		{
+			if(curMinute <= endMinute)
+			{
+				withinPeriod = TRUE;
+			}
+		}
+	}
+	if(withinPeriod)
+	{
+		if(startMunite == curMinute)
+		{
+			checkStatus = EQUAL_START;
+		}
+		else if(curMinute == endMinute)
+		{
+			checkStatus = EQUAL_END;
+		}
+		else
+		{
+			checkStatus = WITHIN_ABSENCE;
+		}
+	}
+	return checkStatus;
+}
+
+
+static void USER_FUNC lum_checkAbsence(TIME_DATA_INFO* pCurTime)
+{
+	U8 i;
+	ABSENXE_CHECK_STATUS checkStatus;
+
+	for(i=1; i<=MAX_ABSENCE_COUNT; i++)
+	{
+		checkStatus |= lum_compareAbsence(i, pCurTime);
+	}
+}
+
+
+static void USER_FUNC lum_compareCountdown(U8 index, TIME_DATA_INFO* pCurTime)
+{
+	COUNTDOWN_DATA_INFO* pCountDownInfo;
+	TIME_DATA_INFO countdownTime;
+	SWITCH_STATUS action;
+
+
+	pCountDownInfo = lum_getCountDownData(index);
+	if(pCountDownInfo->flag.bActive == EVENT_INCATIVE)
+	{
+		return;
+	}
+	lum_gmtime(pCountDownInfo->count, &countdownTime);
+	countdownTime.second == pCurTime->second;
+
+	if(os_memcpy(&countdownTime, pCurTime, sizeof(TIME_DATA_INFO)) == 0)
+	{
+		COUNTDOWN_DATA_INFO countDownInfo;
+
+
+		action = (pCountDownInfo->action == 1)?SWITCH_OPEN:SWITCH_CLOSE;
+		lum_setSwitchStatus(action);
+
+		os_memcpy(&countDownInfo, pCountDownInfo, sizeof(COUNTDOWN_DATA_INFO));
+		countDownInfo.flag.bActive = EVENT_INCATIVE;
+		lum_setCountDownData(&countDownInfo, index);
+	}
+}
+
 

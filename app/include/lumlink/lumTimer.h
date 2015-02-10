@@ -11,7 +11,10 @@
 
 typedef enum
 {
-	beforeStart,
+	OUTOF_ABSENCE		= 0x00,
+	EQUAL_START			= 0x01,
+	WITHIN_ABSENCE		= 0x02,
+	EQUAL_END			= 0x04,
 }ABSENXE_CHECK_STATUS;
 
 
