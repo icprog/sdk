@@ -173,7 +173,7 @@ static void USER_FUNC lum_syncNetworkTimer(BOOL protectCallBack, U32 timeGap)
 void USER_FUNC lum_initSystemTime(void)
 {
 	g_timeDateInfo.lastSystemTime = system_get_time();
-	g_timeDateInfo.lastUTCTime = SEC_2015_01_01_00_00_00;
+	g_timeDateInfo.lastUTCTime = SEC_2014_01_01_00_00_00;
 }
 
 
@@ -184,7 +184,7 @@ void USER_FUNC lum_initNetworkTime(void)
 }
 
 
-static U32 USER_FUNC lum_getSystemTime(void)
+U32 USER_FUNC lum_getSystemTime(void)
 {
 	U32 curTimeUs;
 	U32 totalSecond;

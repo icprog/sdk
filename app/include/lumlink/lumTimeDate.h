@@ -10,7 +10,7 @@
 #define __LUMLINK_TIME_DATE__H__
 
 #define DIFF_SEC_1900_1970         			(2208988800UL)
-#define SEC_2015_01_01_00_00_00				(1420070400UL)
+#define SEC_2014_01_01_00_00_00				(1388505600UL)
 #define SYNC_SYSTEM_TIME_TIMER_GAP			(3600000UL)
 #define SYNC_NETWORK_TIME_TIMER_SUCC_GAP	(3600000UL)
 #define SYNC_NETWORK_TIME_TIMER_PROTECT_GAP	(10000UL)
@@ -37,6 +37,7 @@ typedef struct
 
 void USER_FUNC lum_initSystemTime(void);
 void USER_FUNC lum_initNetworkTime(void);
+U32 USER_FUNC lum_getSystemTime(void);
 void USER_FUNC lum_getGmtime(TIME_DATA_INFO* timeInfo);
 void USER_FUNC lum_getStringTime(S8* timeData, BOOL needDay, BOOL chinaDate);
 void USER_FUNC lum_gmtime(U32 second, TIME_DATA_INFO* timeInfo);

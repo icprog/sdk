@@ -52,10 +52,9 @@ void USER_FUNC lum_platformInit(void)
 {
 	U8 macaddr[6];
 	struct station_config staConfig;
-	char* staSSID = "TP-LINK_47D6";
-	char* staPSWD = "13736098070";
+	char* staSSID = "Lumlink_test";
 	//char* staSSID = "KKKK";
-	//char* staPSWD = "12340000";
+	char* staPSWD = "12340000";
 
 
 	lumDebug("\nSW_Version=%s HW_Version= %s\n",SW_VERSION, HW_VERSION);

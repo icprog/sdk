@@ -444,7 +444,7 @@ void USER_FUNC lum_globalConfigDataInit(void)
 {
 	os_memset(&g_deviceConfig, 0, sizeof(GLOBAL_CONFIG_DATA));
 	lum_loadConfigData();
-	if(g_deviceConfig.deviceConfigData.lumitekFlag != LUMITEK_SW_FLAG+1)
+	if(g_deviceConfig.deviceConfigData.lumitekFlag != LUMITEK_SW_FLAG)
 	{
 		//Device  first power on flag
 		os_memset(&g_deviceConfig, 0, sizeof(GLOBAL_CONFIG_DATA));
@@ -457,6 +457,15 @@ void USER_FUNC lum_globalConfigDataInit(void)
 
 		lum_SaveConfigData();
 	}
+}
+
+U16 USER_FUNC lum_getRandomNumber(U16 mixNum, U16 maxNum)
+{
+	U32 randomData;
+
+
+	randomData = system_get_time();
+	return mixNum + (randomData%(maxNum - mixNum));
 }
 
 

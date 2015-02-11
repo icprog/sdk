@@ -183,16 +183,6 @@ static BOOL USER_FUNC lum_createSendSocket(U8* oriSocketData, CREATE_SOCKET_DATA
 }
 
 
-static U16 USER_FUNC lum_getRandomNumber(U16 mixNum, U16 maxNum)
-{
-	U32 randomData;
-
-
-	randomData = system_get_time();
-	return mixNum + (randomData%(maxNum - mixNum));
-}
-
-
 /********************************************************************************
 
 User Request: 		|23|Dev_MAC|

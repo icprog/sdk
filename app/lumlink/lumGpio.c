@@ -118,6 +118,10 @@ void USER_FUNC lum_setSwitchStatus(SWITCH_STATUS action)
 	U8 actionStatus;
 
 
+	if(action == g_switchStatus)
+	{
+		return;
+	}
 	if(action == SWITCH_OPEN)
 	{
 		lum_openLedStatus();

@@ -18,6 +18,8 @@
 #include "lumlink/lumPlatform.h"
 #include "lumlink/lumGpio.h"
 #include "lumlink/lumTimeDate.h"
+#include "lumlink/lumTimer.h"
+
 
 
 
@@ -38,5 +40,6 @@ void user_init(void)
 	lum_platformInit();
     lum_udpSocketInit();
 	lum_messageTaskInit();
+	lum_initTimer(NOT_NTP_CHECK_TIMER_PERIOD);
 }
 

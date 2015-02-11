@@ -296,5 +296,7 @@ void USER_FUNC lum_setCountDownData(COUNTDOWN_DATA_INFO* countDownData, U8 index
 void USER_FUNC lum_deleteCountDownData(U8 index);
 COUNTDOWN_DATA_INFO* USER_FUNC lum_getCountDownData(U8 index);
 
+U16 USER_FUNC lum_getRandomNumber(U16 mixNum, U16 maxNum);
+
 #endif
 
