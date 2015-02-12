@@ -28,6 +28,7 @@ typedef enum
 
 
 void USER_FUNC lum_initTimer(U32 period);
+void USER_FUNC lum_checkAbsenceWhileChange(void);
 
 #endif
 

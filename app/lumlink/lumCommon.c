@@ -14,6 +14,8 @@
 #include "user_interface.h"
 #include "lumlink/lumCommon.h"
 #include "lumlink/lumTimeDate.h"
+#include "lumlink/lumTimer.h"
+
 
 
 static GLOBAL_CONFIG_DATA g_deviceConfig;
@@ -326,7 +328,7 @@ void USER_FUNC lum_deleteAbsenceData(U8 index, BOOL needSave)
 
 	if(needSave)
 	{
-		//checkAbsenceTimerAfterChange(index);
+		lum_checkAbsenceWhileChange();
 		lum_SaveConfigData();
 	}
 }
@@ -355,7 +357,7 @@ void USER_FUNC lum_setAbsenceData(ASBENCE_DATA_INFO* absenceData, U8 index)
 
 	os_memcpy(&g_deviceConfig.deviceConfigData.absenceData[index], absenceData, sizeof(ASBENCE_DATA_INFO));
 	lum_SaveConfigData();
-	//checkAbsenceTimerAfterChange(index);
+	lum_checkAbsenceWhileChange();
 
 	lumDebug("AbsenceData  index=%d m=%d T=%d W=%d T=%d F=%d S=%d Sun=%d active=%d Shour=%d, Sminute=%d Ehour=%d, Eminute=%d time=%d size=%d\n",
 			 index,

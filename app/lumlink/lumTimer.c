@@ -66,13 +66,13 @@ static void USER_FUNC lum_compareAlarm(U8 index, TIME_DATA_INFO* pCurTime, U16 c
 		return;
 	}
 
-	lumDebug("Alarm index=%d startHour=%d startMinute=%d stopHour=%d stopMinute=%d\n", index, pAlarmInfo->startHour, pAlarmInfo->startMinute, pAlarmInfo->stopHour, pAlarmInfo->stopMinute);
 	checkStartMinute = pAlarmInfo->startHour*60 + pAlarmInfo->startMinute;
 	checkStopMinute = pAlarmInfo->stopHour*60 + pAlarmInfo->stopMinute;
-	lumDebug("Alarm curMinute=%d checkStartMinute=%d checkStopMinute=%d\n", curMinute, checkStartMinute, checkStopMinute);
 
 	//compareWeek = *(U8*)(&pAlarmInfo->repeatData));
-	os_memcpy(&compareWeek, &pAlarmInfo->repeatData, sizeof(ALARM_REPEAT_DATA));
+	os_memcpy(&compareWeek, &pAlarmInfo->repeatData, sizeof(ALARM_REPEAT_DATA));	
+	lumDebug("Alarm index=%d startHour=%d startMinute=%d stopHour=%d stopMinute=%d repeatData=0x%x\n", index, pAlarmInfo->startHour,
+		pAlarmInfo->startMinute, pAlarmInfo->stopHour, pAlarmInfo->stopMinute, compareWeek);
 	if(checkStartMinute == curMinute)
 	{
 		if(lum_compareWeekData(compareWeek, pCurTime->week))
@@ -119,6 +119,21 @@ static void USER_FUNC lum_checkAlarm(TIME_DATA_INFO* pCurTime, U16 curMinute)
 }
 
 
+static void USER_FUNC lum_checkInactiveAbsence(U8 index, ASBENCE_DATA_INFO* pAbenceInfo)
+{
+	U8 compareWeek;
+	ASBENCE_DATA_INFO abenceInfo;
+
+
+	os_memcpy(&compareWeek, &pAbenceInfo->repeatData, sizeof(ALARM_REPEAT_DATA));
+	if((compareWeek&0x7F) == 0) // not repeat
+	{
+		os_memcpy(&abenceInfo, pAbenceInfo, sizeof(ASBENCE_DATA_INFO));
+		abenceInfo.repeatData.bActive = EVENT_INCATIVE;
+		lum_setAbsenceData(&abenceInfo, index);
+	}
+}
+
 
 static ABSENXE_CHECK_STATUS USER_FUNC lum_compareAbsence(U8 index, TIME_DATA_INFO* pCurTime, U16 curMinute)
 {
@@ -136,8 +151,9 @@ static ABSENXE_CHECK_STATUS USER_FUNC lum_compareAbsence(U8 index, TIME_DATA_INF
 		return checkStatus;
 	}
 
-	lumDebug("Absence index=%d, startHour=%d startMinute=%d endHour=%d endMinute=%d\n", index, pAbenceInfo->startHour, pAbenceInfo->startMinute, pAbenceInfo->endHour, pAbenceInfo->endMinute);
 	os_memcpy(&compareWeek, &pAbenceInfo->repeatData, sizeof(ALARM_REPEAT_DATA));
+	lumDebug("Absence index=%d, startHour=%d startMinute=%d endHour=%d endMinute=%d repeatData=0x%x\n", index,
+		pAbenceInfo->startHour, pAbenceInfo->startMinute, pAbenceInfo->endHour, pAbenceInfo->endMinute,compareWeek);
 	startMunite = pAbenceInfo->startHour*60 + pAbenceInfo->startMinute;
 	endMinute = pAbenceInfo->endHour*60 + pAbenceInfo->endMinute;
 
@@ -172,6 +188,7 @@ static ABSENXE_CHECK_STATUS USER_FUNC lum_compareAbsence(U8 index, TIME_DATA_INF
 		else if(curMinute == endMinute)
 		{
 			checkStatus = EQUAL_END;
+			lum_checkInactiveAbsence(index, pAbenceInfo);
 		}
 		else
 		{
@@ -182,36 +199,56 @@ static ABSENXE_CHECK_STATUS USER_FUNC lum_compareAbsence(U8 index, TIME_DATA_INF
 }
 
 
+static void USER_FUNC lum_changeSwitchByAbsence(SWITCH_STATUS action, U16 curMinute, BOOL bStopAbsence)
+{
+	U16 randMinute;
+
+
+	lumDebug("Absence action=%d curMinute=%d bStopAbsence=%d\n", action, curMinute, bStopAbsence);
+	lum_setSwitchStatus(action);
+	if(bStopAbsence)
+	{
+		g_nextAbsenceMinute = INVALUE_ABSENCE_MINUTE;
+	}
+	else
+	{
+		if(action == SWITCH_CLOSE)
+		{
+			randMinute = lum_getRandomNumber(MIN_ABSENCE_CLOSE_INTERVAL, MAX_ABSENCE_CLOSE_INTERVAL);
+		}
+		else
+		{
+			randMinute = lum_getRandomNumber(MIN_ABSENCE_OPEN_INTERVAL, MAX_ABSENCE_OPEN_INTERVAL);
+		}
+		g_nextAbsenceMinute = (curMinute + randMinute)%1440; //24*60
+	}
+}
+
+
 static void USER_FUNC lum_checkAbsence(TIME_DATA_INFO* pCurTime, U16 curMinute)
 {
 	U8 i;
 	ABSENXE_CHECK_STATUS checkStatus;
-	U16 randMinute;
 
+
+	checkStatus = OUTOF_ABSENCE;
 	for(i=0; i<MAX_ABSENCE_COUNT; i++)
 	{
 		checkStatus |= lum_compareAbsence(i, pCurTime, curMinute);
 	}
-	if(checkStatus&EQUAL_START != 0)
+	if((checkStatus&EQUAL_START) != 0 || (checkStatus&WITHIN_ABSENCE) != 0)
 	{
 		if(!g_absenceRunning)
 		{
-			lum_setSwitchStatus(SWITCH_OPEN);
-			randMinute = lum_getRandomNumber(MIN_ABSENCE_OPEN_INTERVAL, MAX_ABSENCE_OPEN_INTERVAL);
-			g_nextAbsenceMinute = (curMinute + randMinute)%1440; //24*60
+			lum_changeSwitchByAbsence(SWITCH_OPEN, curMinute, FALSE);
 			g_absenceRunning = TRUE;
 		}
-	}
-	else if(checkStatus&WITHIN_ABSENCE != 0)
-	{
-		//do nothing
 	}
 	else
 	{
 		if(g_absenceRunning)
 		{
-			lum_setSwitchStatus(SWITCH_CLOSE);
-			g_nextAbsenceMinute = INVALUE_ABSENCE_MINUTE;
+			lum_changeSwitchByAbsence(SWITCH_CLOSE, curMinute, TRUE);
 			g_absenceRunning = FALSE;
 		}
 	}
@@ -224,16 +261,14 @@ static void USER_FUNC lum_checkAbsence(TIME_DATA_INFO* pCurTime, U16 curMinute)
 		curSwitchStatus = lum_getSwitchStatus();
 		if(curSwitchStatus == SWITCH_CLOSE)
 		{
-			randMinute = lum_getRandomNumber(MIN_ABSENCE_OPEN_INTERVAL, MAX_ABSENCE_OPEN_INTERVAL);
-			lum_setSwitchStatus(SWITCH_OPEN);
+			lum_changeSwitchByAbsence(SWITCH_OPEN, curMinute, FALSE);
 		}
 		else
 		{
-			randMinute = lum_getRandomNumber(MIN_ABSENCE_CLOSE_INTERVAL, MAX_ABSENCE_CLOSE_INTERVAL);
-			lum_setSwitchStatus(SWITCH_CLOSE);
+			lum_changeSwitchByAbsence(SWITCH_CLOSE, curMinute, FALSE);
 		}
-		g_nextAbsenceMinute = (curMinute + randMinute)%1440; //24*60
 	}
+	lumDebug("Absence checkStatus = 0x%x g_absenceRunning=%d g_nextAbsenceMinute=%d curMinute=%d\n", checkStatus, g_absenceRunning, g_nextAbsenceMinute, curMinute);
 }
 
 
@@ -324,7 +359,7 @@ static void USER_FUNC lum_minuteCheckProtect(TIME_DATA_INFO* pCurTime)
 		totalMinute = 1;
 	}
 
-	lumDebug("totalMinute=%d g_lastCheckMinute=%d\n", totalMinute, g_lastCheckMinute);
+	//lumDebug("totalMinute=%d g_lastCheckMinute=%d\n", totalMinute, g_lastCheckMinute);
 	if(totalMinute > 1)
 	{
 		totalSecond = lum_getSystemTime();
@@ -360,6 +395,18 @@ static void USER_FUNC lum_checkTimerCallback(void *arg)
 		timerPeriod = NOT_NTP_CHECK_TIMER_PERIOD;
 	}
 	lum_initTimer(timerPeriod);
+}
+
+
+void USER_FUNC lum_checkAbsenceWhileChange(void)
+{
+	TIME_DATA_INFO curTime;
+	U16 curMinute;
+
+
+	lum_getGmtime(&curTime);
+	curMinute = curTime.hour*60 + curTime.minute;
+	lum_checkAbsence(&curTime, curMinute);
 }
 
 
