@@ -46,9 +46,20 @@ static BOOL USER_FUNC lum_compareWeekData(U8 compareWeek, U8 curWeek)
 	return ret;
 }
 
+
 static BOOL USER_FUNC lum_bAbsenceRunNow(void)
 {
 	return g_absenceRunning;
+}
+
+
+static void USER_FUNC lum_checkInactiveAlarm(U8 index, ALARM_DATA_INFO* pAlarmInfo)
+{
+	ALARM_DATA_INFO tmpAlarmInfo;
+
+	os_memcpy(&tmpAlarmInfo, pAlarmInfo, sizeof(ALARM_DATA_INFO));
+	tmpAlarmInfo.repeatData.bActive = (U8)EVENT_INCATIVE;
+	lum_setAlarmData(&tmpAlarmInfo, index);
 }
 
 
@@ -102,6 +113,7 @@ static void USER_FUNC lum_compareAlarm(U8 index, TIME_DATA_INFO* pCurTime, U16 c
 			if((compareWeek&0x7F) == 0)
 			{
 				//unActive alarm
+				lum_checkInactiveAlarm(index, pAlarmInfo);
 			}
 		}
 	}
@@ -272,6 +284,16 @@ static void USER_FUNC lum_checkAbsence(TIME_DATA_INFO* pCurTime, U16 curMinute)
 }
 
 
+static void USER_FUNC lum_checkInactiveCountdown(U8 index, COUNTDOWN_DATA_INFO* pCountDownInfo)
+{
+	COUNTDOWN_DATA_INFO countDownInfo;
+
+	os_memcpy(&countDownInfo, pCountDownInfo, sizeof(COUNTDOWN_DATA_INFO));
+	countDownInfo.flag.bActive = EVENT_INCATIVE;
+	lum_setCountDownData(&countDownInfo, index);
+}
+
+
 static void USER_FUNC lum_compareCountdown(U8 index, TIME_DATA_INFO* pCurTime)
 {
 	COUNTDOWN_DATA_INFO* pCountDownInfo;
@@ -291,15 +313,13 @@ static void USER_FUNC lum_compareCountdown(U8 index, TIME_DATA_INFO* pCurTime)
 
 	if(os_memcmp(&countdownTime, pCurTime, sizeof(TIME_DATA_INFO)) == 0)
 	{
-		COUNTDOWN_DATA_INFO countDownInfo;
+		if(!lum_bAbsenceRunNow())
+		{
+			action = (pCountDownInfo->action == 1)?SWITCH_OPEN:SWITCH_CLOSE;
+			lum_setSwitchStatus(action);
+		}
 
-
-		action = (pCountDownInfo->action == 1)?SWITCH_OPEN:SWITCH_CLOSE;
-		lum_setSwitchStatus(action);
-
-		os_memcpy(&countDownInfo, pCountDownInfo, sizeof(COUNTDOWN_DATA_INFO));
-		countDownInfo.flag.bActive = EVENT_INCATIVE;
-		lum_setCountDownData(&countDownInfo, index);
+		lum_checkInactiveCountdown(index, pCountDownInfo);
 	}
 }
 
@@ -314,7 +334,6 @@ static void USER_FUNC lum_checkCountdown(TIME_DATA_INFO* pCurTime)
 		lum_compareCountdown(i, pCurTime);
 	}
 }
-
 
 
 static void USER_FUNC lum_checkTimer(TIME_DATA_INFO* pCurTime)
