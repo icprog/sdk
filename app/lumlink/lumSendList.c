@@ -39,7 +39,7 @@ static void USER_FUNC lum_resendTimerCallback(void *arg)
 }
 
 
-static void USER_FUNC lum_initResendTimer(BOOL bDelayingAfterSend)
+static void USER_FUNC lum_initResendTimer(BOOL bDelayingAfterSend, BOOL bSocketUDP)
 {
 	static os_timer_t reSendTimerFd;
 	U32 timerGap;
@@ -52,7 +52,14 @@ static void USER_FUNC lum_initResendTimer(BOOL bDelayingAfterSend)
 	if(bDelayingAfterSend)
 	{
 		g_bDelayingAfterSend = TRUE;
-		timerGap = NEXT_SOCKET_SEND_DELAY;
+		if(bSocketUDP)
+		{
+			timerGap = NEXT_UDP_SOCKET_SEND_DELAY;
+		}
+		else
+		{
+			timerGap = NEXT_TCP_SOCKET_SEND_DELAY;
+		}
 	}
 	else
 	{
@@ -69,7 +76,7 @@ void USER_FUNC lum_sendListInit(void)
 	g_sendListHeader.firstNodePtr = NULL;
 	g_sendListHeader.noteCount = 0;
 
-	lum_initResendTimer(FALSE);
+	lum_initResendTimer(FALSE, FALSE);
 	g_bDelayingAfterSend = FALSE;
 }
 
@@ -238,7 +245,7 @@ void USER_FUNC lum_checkSendList(void)
 	BOOL needCheck = FALSE;;
 
 
-	lum_initResendTimer(FALSE);
+	lum_initResendTimer(FALSE, FALSE);
 	curTime = lum_getSystemTime();
 	//lumDebug("<<<========%d lum_checkSendList noteCount=%d mallocCount=%d g_bDelayingAfterSend=%d\n",
 	//         curTime, g_sendListHeader.noteCount, lum_getMallocCount(), g_bDelayingAfterSend);
@@ -263,7 +270,7 @@ void USER_FUNC lum_checkSendList(void)
 			{
 				sendSuccess = lum_sendTcpData(pCurNode->nodeBody.pData, pCurNode->nodeBody.dataLen);
 			}
-			lum_initResendTimer(TRUE);
+			lum_initResendTimer(TRUE, (pCurNode->nodeBody.msgOrigin == MSG_FROM_UDP));
 			pCurNode->nodeBody.sendCount++;
 
 #if 0

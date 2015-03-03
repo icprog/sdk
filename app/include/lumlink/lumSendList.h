@@ -11,10 +11,11 @@
 
 
 
-#define MAX_RESEND_COUNT			4		//4¥Œ
-#define MAX_RESEND_INTERVAL			8		//8√Î
-#define RESEND_TIMER_GAP			4000	//4S
-#define NEXT_SOCKET_SEND_DELAY		100
+#define MAX_RESEND_COUNT				4		//4¥Œ
+#define MAX_RESEND_INTERVAL				3		//4√Î
+#define RESEND_TIMER_GAP				4000	//4S
+#define NEXT_TCP_SOCKET_SEND_DELAY		100
+#define NEXT_UDP_SOCKET_SEND_DELAY		20
 
 
 typedef struct
