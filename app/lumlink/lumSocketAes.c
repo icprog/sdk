@@ -1,6 +1,6 @@
 /*
 ******************************
-*Company:Lumitek
+*Company:Lumlink
 *Data:2015-01-26
 *Author:Meiyusong
 ******************************
@@ -229,8 +229,10 @@ U8* USER_FUNC lum_createSendSocketData(CREATE_SOCKET_DATA* pCreateData, U8* sock
 	//fill body data
 	os_memcpy(tmpData+SOCKET_HEADER_LEN, pCreateData->bodyData, pCreateData->bodyLen);
 
+#ifdef LUM_SHOW_SOCKET_DATA
 	lum_showHexData(lum_showSendType(socketFrom, TRUE, tmpData[SOCKET_HEADER_LEN]), tmpData, (pCreateData->bodyLen+SOCKET_HEADER_LEN));
-	
+#endif
+
 	mallocLen = SOCKET_HEADER_LEN + pCreateData->bodyLen + AES_BLOCKSIZE + 1;
 	pAesData = (U8*)lum_malloc(mallocLen);
 	if(pAesData == NULL)

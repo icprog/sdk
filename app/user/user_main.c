@@ -19,6 +19,8 @@
 #include "lumlink/lumGpio.h"
 #include "lumlink/lumTimeDate.h"
 #include "lumlink/lumTimer.h"
+#include "lumlink/lumWebServer.h"
+#include "lumlink/lumSendList.h"
 
 
 
@@ -41,5 +43,7 @@ void user_init(void)
     lum_udpSocketInit();
 	lum_messageTaskInit();
 	lum_initTimer(NOT_NTP_CHECK_TIMER_PERIOD);
+	//lum_webServerInit(80); //port 80
+	lum_sendListInit();
 }
 

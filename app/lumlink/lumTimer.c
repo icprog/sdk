@@ -280,7 +280,7 @@ static void USER_FUNC lum_checkAbsence(TIME_DATA_INFO* pCurTime, U16 curMinute)
 			lum_changeSwitchByAbsence(SWITCH_CLOSE, curMinute, FALSE);
 		}
 	}
-	lumDebug("Absence checkStatus = 0x%x g_absenceRunning=%d g_nextAbsenceMinute=%d curMinute=%d\n", checkStatus, g_absenceRunning, g_nextAbsenceMinute, curMinute);
+	//lumDebug("Absence checkStatus = 0x%x g_absenceRunning=%d g_nextAbsenceMinute=%d curMinute=%d\n", checkStatus, g_absenceRunning, g_nextAbsenceMinute, curMinute);
 }
 
 
@@ -342,8 +342,8 @@ static void USER_FUNC lum_checkTimer(TIME_DATA_INFO* pCurTime)
 
 
 	curMinute = pCurTime->hour*60 + pCurTime->minute;
-	lumDebug("checkTimer %04d-%02d-%02d %02d:%02d:%02d [%d]\n", pCurTime->year, pCurTime->month+1, pCurTime->day,
-		pCurTime->hour, pCurTime->minute, pCurTime->second, pCurTime->week);
+	//lumDebug("checkTimer %04d-%02d-%02d %02d:%02d:%02d [%d]\n", pCurTime->year, pCurTime->month+1, pCurTime->day,
+	//	pCurTime->hour, pCurTime->minute, pCurTime->second, pCurTime->week);
 
 	lum_checkAlarm(pCurTime, curMinute);
 	lum_checkAbsence(pCurTime, curMinute);

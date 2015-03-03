@@ -11,7 +11,7 @@
 
 
 void USER_FUNC lum_udpSocketInit(void);
-void USER_FUNC lum_sendUdpData(U8* socketData, U8 dataLen, U32 ipData);
+BOOL USER_FUNC lum_sendUdpData(U8* socketData, U8 dataLen, U32 ipData);
 
 
 #endif

@@ -1,6 +1,6 @@
 /*
 ******************************
-*Company:Lumitek
+*Company:Lumlink
 *Data:2015-02-01
 *Author:Meiyusong
 ******************************
@@ -29,13 +29,18 @@ static struct espconn serverConnHandle;
 static struct _esp_tcp serverTcpHandle;
 
 
-void USER_FUNC lum_sendTcpData(U8* socketData, U8 dataLen)
+BOOL USER_FUNC lum_sendTcpData(U8* socketData, U8 dataLen)
 {
+	BOOL ret;
+	S8 sendResult = ESPCONN_TIMEOUT;
+
 	//lumDebug("lum_sendTcpData  g_tcpConnStatus=%d\n", g_tcpConnStatus);
 	if(g_tcpConnStatus == TCP_BALANCE_CONNECTED || g_tcpConnStatus == TCP_SERVER_CONNECTED)
 	{
-		espconn_sent(&serverConnHandle, socketData, dataLen);
+		sendResult = espconn_sent(&serverConnHandle, socketData, dataLen);
 	}
+	ret = (sendResult == ESPCONN_OK)?TRUE:FALSE;
+	return ret;
 }
 
 
@@ -86,7 +91,7 @@ static void USER_FUNC lum_balanceDisconnectCallback(void *arg)
 {
 	struct espconn *pespconn = arg;
 
-	lumDebug("lum_tcpDisconnectCallback g_tcpConnStatus=%d\n", g_tcpConnStatus);
+	lumDebug("lum_balanceDisconnectCallback g_tcpConnStatus=%d\n", g_tcpConnStatus);
 	g_tcpConnStatus = TCP_NONE_CONNECT;
 	espconn_delete(pespconn);
 	lum_connActualServer();

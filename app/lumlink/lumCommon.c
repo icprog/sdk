@@ -102,6 +102,13 @@ void USER_FUNC lum_free(void* pData)
 	//lumDebug("**** lum_free g_malloc_count=%d\n", g_deviceConfig.globalData.mallocCount);
 }
 
+
+U16 USER_FUNC lum_getMallocCount(void)
+{
+	return g_deviceConfig.globalData.mallocCount;
+}
+
+
 static void USER_FUNC lum_writeConfigData(DEVICE_CONFIG_DATA* configData)
 {
 	U32 configLen;

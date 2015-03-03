@@ -264,6 +264,7 @@ void USER_FUNC lum_getDeviceMac(U8* macAddr);
 
 U8* USER_FUNC lum_malloc(U32 mllocSize);
 void USER_FUNC lum_free(void* pData);
+U16 USER_FUNC lum_getMallocCount(void);
 
 void USER_FUNC lum_globalConfigDataInit(void);
 DEVICE_NAME_DATA* USER_FUNC lum_getDeviceName(void);

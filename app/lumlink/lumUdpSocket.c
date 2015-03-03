@@ -1,6 +1,6 @@
 /*
 ******************************
-*Company:Lumitek
+*Company:Lumlink
 *Data:2015-01-26
 *Author:Meiyusong
 ******************************
@@ -36,13 +36,19 @@ static void USER_FUNC lum_udpSocketRecv(void *arg, char *pusrdata, unsigned shor
 }
 
 
-void USER_FUNC lum_sendUdpData(U8* socketData, U8 dataLen, U32 ipData)
+BOOL USER_FUNC lum_sendUdpData(U8* socketData, U8 dataLen, U32 ipData)
 {
+	BOOL ret;
+	S8 sendResult;
+
 	os_memcpy(g_UDPespconn.proto.udp->remote_ip, &ipData, SOCKET_IP_LEN);
 	g_UDPespconn.proto.udp->remote_port = UDP_SOCKET_PORT;
 	g_UDPespconn.proto.udp->local_port = espconn_port();
 	//lum_showHexData(socketData, dataLen);
-	espconn_sent(&g_UDPespconn, socketData, dataLen);
+	sendResult = espconn_sent(&g_UDPespconn, socketData, dataLen);
+
+	ret = (sendResult == ESPCONN_OK)?TRUE:FALSE;
+	return ret;
 }
 
 

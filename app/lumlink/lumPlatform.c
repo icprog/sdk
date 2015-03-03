@@ -52,8 +52,8 @@ void USER_FUNC lum_platformInit(void)
 {
 	U8 macaddr[6];
 	struct station_config staConfig;
-	char* staSSID = "Lumlink_test";
-	//char* staSSID = "KKKK";
+	//char* staSSID = "Lumlink_test";
+	char* staSSID = "KKKK";
 	char* staPSWD = "12340000";
 
 

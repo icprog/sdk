@@ -15,6 +15,8 @@
 #include "lumlink/lumMessageTask.h"
 #include "lumlink/lumSocketAes.h"
 #include "lumlink/lumGpio.h"
+#include "lumlink/lumSendList.h"
+
 
 
 
@@ -120,8 +122,9 @@ void USER_FUNC lum_sockRecvData(S8* recvData, U16 dataLen, MSG_ORIGIN socketFrom
 			lum_free(pDecryptData);
 			return;
 		}
-
+#ifdef LUM_SHOW_SOCKET_DATA
 		lum_showHexData(lum_showSendType(socketFrom, FALSE, pDecryptData[SOCKET_HEADER_LEN]), pDecryptData, decryptLen);
+#endif
 		messageBody = lum_createTaskMessage(pDecryptData, ipAddr, socketFrom);
 		if(messageBody == NULL)
 		{
@@ -162,23 +165,29 @@ static BOOL USER_FUNC lum_createSendSocket(U8* oriSocketData, CREATE_SOCKET_DATA
 	}
 
 	sendData = lum_createSendSocketData(pCreateData, &socketLen, socketFrom);
+
 	if(sendData == NULL)
 	{
 		return FALSE;
 	}
-	if(socketFrom == MSG_FROM_UDP)
-	{
-		lum_sendUdpData(sendData, socketLen, ipAddr);
-	}
-	else if(socketFrom == MSG_FROM_TCP)
-	{
-		lum_sendTcpData(sendData, socketLen);
-	}
 	else
 	{
-		//Do nothing
+		SEND_NODE_DATA sendNode;
+
+
+		sendNode.bReback = pCreateData->bReback;
+		sendNode.cmdData = pCreateData->bodyData[0];
+		sendNode.dataLen = socketLen;
+		sendNode.msgOrigin = socketFrom;
+		sendNode.nextSendTime = 0;
+		sendNode.pData = sendData;
+		sendNode.sendCount = 0;
+		sendNode.snIndex = pCreateData->snIndex;
+		sendNode.socketIp = ipAddr;
+		
+		lum_addSendDataToNode(&sendNode);
+		//lum_checkSendList();
 	}
-	lum_free(sendData);
 	return TRUE;
 }
 
@@ -507,6 +516,8 @@ static void USER_FUNC lum_replyGetServerAddr(U8* pSocketDataRecv, MSG_ORIGIN soc
 
 	tmp = (U8*)&socketAddr.ipAddr;
 	lumDebug("server ip=%d.%d.%d.%d  prot=%d\n", tmp[0], tmp[1], tmp[2], tmp[3], socketAddr.port);
+
+	lum_deleteRequstSendNode(pSocketDataRecv);
 }
 
 
@@ -543,6 +554,7 @@ static void USER_FUNC lum_replyRequstConnServer(U8* pSocketDataRecv, MSG_ORIGIN 
 	//lumDebug("Keylen=%d AesKey=%s\n", pSocketDataRecv[SOCKET_DATA_OFFSET], pAesKey);
 	//收到命令立刻设置，防止多条命令同时到达，密钥错位 (设置密钥提前)
 	lum_sendLocalTaskMessage(MSG_CMD_HEART_BEAT, NULL, 0);
+	lum_deleteRequstSendNode(pSocketDataRecv);
 }
 
 
@@ -610,9 +622,9 @@ static void USER_FUNC lum_replyTcpHeartBeat(U8* pSocketDataRecv)
 
 	os_memcpy(&interval, (pSocketDataRecv + SOCKET_DATA_OFFSET), 2);
 	interval = ntohs(interval);
-	//lumDebug("TCP interval = %d\n", interval);
-
 	lum_setHeartBeatTimer(interval);
+
+	lum_deleteRequstSendNode(pSocketDataRecv);
 }
 
 
@@ -701,7 +713,7 @@ static U32 USER_FUNC lum_getBroadcastAddr(void)
 }
 
 
-static void USER_FUNC lum_replyGpioChangeEvent(U8* pSocketDataRecv)
+static void USER_FUNC lum_reportGpioChangeEvent(U8* pSocketDataRecv)
 {
 	U8 gpioChangeData[10];
 	GPIO_STATUS* pGioStatus;
@@ -732,6 +744,11 @@ static void USER_FUNC lum_replyGpioChangeEvent(U8* pSocketDataRecv)
 	lum_createSendSocket(pSocketDataRecv, &createData, MSG_FROM_TCP, TCP_NULL_IP);
 }
 
+
+static void USER_FUNC lum_replyGpioChangeEvent(U8* pSocketDataRecv)
+{
+	lum_deleteRequstSendNode(pSocketDataRecv);
+}
 
 
 /********************************************************************************
@@ -1246,7 +1263,14 @@ static void USER_FUNC lum_messageTask(os_event_t *e)
 		break;
 
 	case MSG_CMD_REPORT_GPIO_CHANGE:
-		lum_replyGpioChangeEvent(messageBody->pData);
+		if(messageBody->msgOrigin == MSG_LOCAL_EVENT)
+		{
+			lum_reportGpioChangeEvent(messageBody->pData);
+		}
+		else
+		{
+			lum_replyGpioChangeEvent(messageBody->pData);
+		}
 		break;
 
 	//Alarm
@@ -1288,6 +1312,10 @@ static void USER_FUNC lum_messageTask(os_event_t *e)
 		lum_replyDeleteCountDownData(messageBody->pData, messageBody->msgOrigin, messageBody->socketIp);
 		break;
 
+	case MSG_CMD_LOCAL_CHECK_SEND_LIST:
+		lum_checkSendList();
+		break;
+
 	default:
 		break;
 	}
@@ -1300,6 +1328,7 @@ static void USER_FUNC lum_messageTask(os_event_t *e)
 		}
 		lum_free(messageBody);
 	}
+	//lumDebug("lum_messageTask mallocCount=%d\n", lum_getMallocCount());
 }
 
 
