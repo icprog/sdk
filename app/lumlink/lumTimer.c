@@ -371,6 +371,10 @@ static void USER_FUNC lum_minuteCheckProtect(TIME_DATA_INFO* pCurTime)
 		{
 			tmpMinute = pCurTime->minute + 60;
 		}
+		else
+		{
+			tmpMinute = pCurTime->minute;
+		}
 		totalMinute = tmpMinute - g_lastCheckMinute;
 	}
 	if(totalMinute > 10) //calibrate utc time
